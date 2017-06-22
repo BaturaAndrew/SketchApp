@@ -1,0 +1,913 @@
+unit SketchView;
+
+interface
+
+uses Windows, Graphics, Dialogs, Generics.Collections, Generics.Defaults,
+  // для чтения размеров заготовки
+  InputData,
+  SysUtils, Classes;
+
+type
+
+  // Класс овечает за формирование внутреннего и внешнего контуров эскизов
+  // в виде массива точек и за вывод их на экран
+  TSketchView = class
+  private
+    flagPodrezLevTorec: boolean;
+    razmLeftPodrez: single;
+  public
+    // Экранные размеры
+    m_Screen: TRECT;
+    // Смещение по оси Х и У при выводе детали
+    m_dx, m_dy: integer;
+    // Маштаб
+    m_metric: single;
+
+  protected
+    // Увеличение(тоже в некотором роде маштаб)
+    m_Zoom: real;
+
+    // Массив наружных поверхностей
+    OutsideSurfaces: TList;
+    // Массив внутренних поверхностей
+    InnerSurfaces: TList;
+    // Массив наружных  поверхностей с промасштабированными координатами
+    ScaleSurfaces: TList;
+    // Массив наружных  поверхностей с промасштабированными координатами
+    InnerScaleSurfaces: TList;
+
+    // Размеры заготовки
+    DiamZagot, LenZagot: single;
+
+  public
+    // конструктор
+    constructor Create;
+    // установка масштаба для эскиза
+    procedure SetMetric;
+    // Вывод кривых на экран
+    procedure Draw(canvas: TCanvas);
+    // Создание поверхностей заготовки
+    procedure CreateFirstSurface;
+    // Очистка данных
+    procedure Clear;
+
+    // Вставка наружных полуоткрытых поверхностей (выемок)
+    procedure Insert_OutsideHalfopenSurfaces(currTrans: ptrTrans;
+      flagLeft: boolean; nomerPriv: integer = 0; nomerPov: integer = 0;
+      podrezTorec: single = 0; tochitPover: single = 0);
+
+    // Вставка внутреннего открытого цилиндра (вырез)
+    procedure Insert_OpenInnerCylinder(currentTransition: ptrTrans;
+      nomerPovTorec: integer; diametr: single);
+
+    // Вставка внутренних полуоткрытых поверхностей (вырезов)
+    procedure Insert_InnerHalfopenSurfaces(currTrans: ptrTrans;
+      flagLeft: boolean; nomerPovTorec: integer = 0; podrezTorec: single = 0;
+      tochitPover: single = 0);
+
+    // изменение размера левого или правого торца
+    procedure Resize_Torec(newSize: single; Uslov_kod_pover_A_NUSL: integer);
+
+  private
+    // Преобразование координат поверхностей с учетом смещений и масштаба
+    procedure ConvertingPoint;
+
+    // Находим индекс поверхности в listSurfaces к которой привязываемся, делая наружную выемку
+    function GetOutsideSurfPriv(insertDiam: single; flagLeft: boolean): integer;
+
+    // Находим -//- , делая внутренний вырез
+    function GetInnetSurfPriv(insertDiam: single; flagLeft: boolean): integer;
+
+    // Процедура вставки поверхности
+    procedure InsertSurf(flagOutsideSurf: boolean;
+      X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL: integer);
+  end;
+
+implementation
+
+function Comp(Item1, Item2: Pointer): integer;
+// С помощью этой функции реализуется	сортировка поверхностей по координате X
+begin
+  if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) <
+    ((pSurf(Item2).point[0].X) + (pSurf(Item2).point[1].X)) then
+    Result := -1
+  else if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) >
+    ((pSurf(Item2).point[0].X) + (pSurf(Item2).point[1].X)) then
+    Result := 1
+  else
+    Result := 0
+end;
+
+// Конструктор
+procedure TSketchView.Clear;
+var
+  i: integer;
+  surface1: pSurf;
+begin
+  OutsideSurfaces.Clear;
+
+  InnerSurfaces.Clear;
+
+  InnerScaleSurfaces.Clear;
+
+  ScaleSurfaces.Clear;
+  for i := 0 to 2 do
+  begin
+    surface1 := nil;
+    new(surface1);
+    ScaleSurfaces.Add(surface1);
+  end;
+
+  flagPodrezLevTorec := false;
+  razmLeftPodrez := 0;
+
+end;
+
+procedure TSketchView.ConvertingPoint;
+var
+  i, j, k: integer;
+  buffX: integer;
+begin
+
+  // Проход всех наружных поверхностей
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+    // Преобразование первой  и второй точки поверхости
+    for j := 0 to 1 do
+    begin
+      if (pSurf(OutsideSurfaces[i]).point[j].X = 0) then
+        pSurf(ScaleSurfaces[i]).point[j].X := round(m_dx)
+      else
+        pSurf(ScaleSurfaces[i]).point[j].X :=
+          round((m_dx + pSurf(OutsideSurfaces[i]).point[j].X * m_metric));
+
+      if (pSurf(OutsideSurfaces[i]).point[j].Y = 0) then
+        pSurf(ScaleSurfaces[i]).point[j].Y := round(m_dy)
+      else
+        pSurf(ScaleSurfaces[i]).point[j].Y :=
+          round((m_dy + pSurf(OutsideSurfaces[i]).point[j].Y * m_metric));
+
+    end;
+
+  end;
+
+  // Проход всех внутренних  поверхностей
+  for i := 0 to InnerScaleSurfaces.Count - 1 do
+    // Преобразование первой  и второй точки поверхости
+    for j := 0 to 1 do
+    begin
+      if (pSurf(InnerSurfaces[i]).point[j].X = 0) then
+        pSurf(InnerScaleSurfaces[i]).point[j].X := round(m_dx)
+      else
+        pSurf(InnerScaleSurfaces[i]).point[j].X :=
+          round((m_dx + pSurf(InnerSurfaces[i]).point[j].X * m_metric));
+
+      if (pSurf(InnerSurfaces[i]).point[j].Y = 0) then
+        pSurf(InnerScaleSurfaces[i]).point[j].Y := round(m_dy)
+      else
+        pSurf(InnerScaleSurfaces[i]).point[j].Y :=
+          round((m_dy + pSurf(InnerSurfaces[i]).point[j].Y * m_metric));
+
+    end;
+
+end;
+
+constructor TSketchView.Create;
+var
+  i: integer;
+  surface1: pSurf;
+begin
+  m_Zoom := 1.4;
+  m_dx := 0;
+  m_dy := 0;
+  OutsideSurfaces := TList.Create;
+  InnerSurfaces := TList.Create;
+  InnerScaleSurfaces := TList.Create;
+  ScaleSurfaces := TList.Create;
+  for i := 0 to 2 do
+  begin
+    surface1 := nil;
+    new(surface1);
+    ScaleSurfaces.Add(surface1);
+  end;
+
+  flagPodrezLevTorec := false;
+  razmLeftPodrez := 0;
+end;
+
+procedure TSketchView.Insert_OutsideHalfopenSurfaces(currTrans: ptrTrans;
+  flagLeft: boolean; nomerPriv: integer; nomerPov: integer;
+  podrezTorec, tochitPover: single);
+var
+  surface, surface1: pSurf;
+  Id: integer;
+  X1, X2, Y1, Y2: integer;
+  Index: integer;
+  number, Kod_PKDA, Kod_NUSL: integer;
+  // номер привязочной поверхности
+  numPriv: integer;
+begin
+
+  numPriv := currTrans.PRIV;
+  // когда   вызываем процедуру для случая "точить-подрезать"
+  if (nomerPov = 0) then
+  begin
+    // выбираем размеры
+    podrezTorec := currTrans.SizesFromTP[2];
+    tochitPover := currTrans.SizesFromTP[0];
+    nomerPov := currTrans.NPVA;
+
+    numPriv := nomerPriv;
+  end;
+
+  // вычисляем индекс поверхности-цилиндра, к которому будем привязывать выемку
+  Id := GetOutsideSurfPriv(tochitPover, flagLeft);
+
+  // вставляем поверхности справа
+  if (not(flagLeft)) then
+  begin
+    // Когда вставляем слева вырез из перехода "точить-подрезать",
+    // то размер подрезки отсчитывается от крайнего левого торца
+
+    // Вставляем правый полуоткрытый торец
+    begin
+      // Когда размер привязки не равен 1(не привязан к левому торцу)
+      if (numPriv <> 1) then
+      begin
+        X1 := round(pSurf(OutsideSurfaces[Id + 1]).point[1].X - podrezTorec);
+        X2 := X1;
+      end
+      else
+      begin
+        X1 := round(podrezTorec);
+        X2 := X1;
+      end;
+      Y1 := round(pSurf(OutsideSurfaces[Id]).point[1].Y);
+      Y2 := round(tochitPover);
+      Kod_PKDA := 2132;
+      Kod_NUSL := 9905;
+      Index := Id + 1;
+      InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+      // И изменяем размеры цилиндра, который перед вставленным торцем
+      pSurf(OutsideSurfaces[Id]).point[1].X := X1;
+    end;
+
+    // Вставляем правый полуоткрытый цилиндр
+    begin
+      if (numPriv <> 1) then
+        X1 := round(pSurf(OutsideSurfaces[Id + 2]).point[1].X - podrezTorec)
+      else
+        X1 := round(podrezTorec);
+
+      X2 := round(pSurf(OutsideSurfaces[Id + 2]).point[1].X);
+      Y1 := round(tochitPover);
+      Y2 := round(tochitPover);
+      Kod_PKDA := 2112;
+      number := nomerPov + 1;
+      Kod_NUSL := 9906;
+      Index := Id + 2;
+      InsertSurf(true, X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL);
+      // Изменяем размер торца, который идет за вставленным цилиндром
+      pSurf(OutsideSurfaces[Id + 3]).point[0].Y := Y2;
+    end;
+  end
+
+  else // слева
+  begin
+    // Вставляем левый полуоткрытый цилиндр
+    begin
+      X1 := round(pSurf(OutsideSurfaces[Id]).point[0].X);
+      if (numPriv <> 1) then
+      begin
+        X2 := round(pSurf(OutsideSurfaces[Id]).point[0].X + podrezTorec);
+      end
+      else
+      begin
+        X2 := round(podrezTorec);
+      end;
+      Y1 := round(tochitPover);
+      Y2 := round(tochitPover);
+      Kod_PKDA := 2112;
+      Kod_NUSL := 9902;
+      Index := Id + 1;
+      InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+      // Изменяем размер торца, который идет до  вставленного цилиндра
+      pSurf(OutsideSurfaces[Id - 1]).point[1].Y := Y1;
+    end;
+
+    // Вставляем левый полуоткрытый торец
+    begin
+      if (numPriv <> 1) then
+      begin
+        X1 := round(pSurf(OutsideSurfaces[Id]).point[0].X + podrezTorec);
+        X2 := X1;
+      end
+      else
+      begin
+        X1 := round(podrezTorec);
+        X2 := X1;
+      end;
+      // Если подрезали левый торец
+      if (flagPodrezLevTorec) then
+      begin
+        X1 := X1 + round(razmLeftPodrez);
+        X2 := X1;
+        pSurf(OutsideSurfaces[Id + 1]).point[1].X := X1;
+        pSurf(OutsideSurfaces[Id]).point[0].X := X1;
+      end;
+      Y1 := round(tochitPover);
+      Y2 := round(pSurf(OutsideSurfaces[Id]).point[0].Y);
+      number := nomerPov - 1;
+      Kod_PKDA := 2132;
+      Kod_NUSL := 9903;
+
+      InsertSurf(true, X1, X2, Y1, Y2, Id, number, Kod_PKDA, Kod_NUSL);
+
+      // Изменяем размер цилиндра, который идет после  вставленного торца
+      pSurf(OutsideSurfaces[Id + 1]).point[0].X := X1;
+    end;
+
+  end; // закрывает else
+end;
+
+procedure TSketchView.InsertSurf(flagOutsideSurf: boolean;
+  X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL: integer);
+var
+  surface, surfNil: pSurf;
+begin
+  new(surface);
+  surface.point[0].X := X1;
+  surface.point[1].X := X2;
+  surface.point[0].Y := Y1;
+  surface.point[1].Y := Y2;
+  surface.number := number;
+  // surface.Nomer_Pover_L_POVB := 0;
+  // surface.Nomer_Pover_R_POVV := 2;
+  surface.PKDA := Kod_PKDA;
+  surface.NUSL := Kod_NUSL;
+  // surface.Nomer_Pover_PRIV := 3;
+  // какую поверхность вставляем: нуружную или внутреннюю
+
+  new(surfNil);
+  if (flagOutsideSurf) then
+  begin
+    OutsideSurfaces.Insert(Index, surface);
+    ScaleSurfaces.Add(surfNil);
+  end
+  else
+  begin
+    InnerSurfaces.Add(surface);
+    InnerScaleSurfaces.Add(surfNil);
+  end;
+end;
+
+procedure TSketchView.Insert_InnerHalfopenSurfaces(currTrans: ptrTrans;
+  flagLeft: boolean; nomerPovTorec: integer = 0; podrezTorec: single = 0;
+  tochitPover: single = 0);
+var
+  i: integer;
+  surface, surface1: pSurf;
+  Id: integer;
+  X1, X2, Y1, Y2: integer;
+  Index: integer;
+  number, Kod_Pover_A_PKDA, Uslov_kod_pover_A_NUSL: integer;
+
+  existInnerHalfopenCylinder: boolean;
+begin
+
+  if (nomerPovTorec = 0) then
+  begin
+    podrezTorec := currTrans.SizesFromTP[1];
+    tochitPover := currTrans.SizesFromTP[0];
+    nomerPovTorec := currTrans.NPVA;
+  end;
+
+  // Чтобы округляло до большего целого числа если после запятой 5. Т.к. в функции Round
+  // Округление использует банковские правила, где точная половина значения вызывает округление к четному числу
+  if (Frac(podrezTorec) <= 0.5) then
+    podrezTorec := podrezTorec + 0.1;
+  if (Frac(tochitPover) <= 0.5) then
+    tochitPover := tochitPover + 0.1;
+
+  // вычисляем индекс поверхности-цилиндра, к которому будем привязывать выемку
+  Id := GetInnetSurfPriv(tochitPover, flagLeft);
+
+  existInnerHalfopenCylinder := false;
+
+  // проверяем, есть ли уже внутренний вырез
+  // (если номер обрабатываемой поверхности уже существует во внутренних поверхностях эскиза)
+  for i := 0 to InnerSurfaces.Count - 1 do
+  begin
+    if (pSurf(InnerSurfaces[i]).number = nomerPovTorec) then
+    begin
+      existInnerHalfopenCylinder := true;
+      break;
+    end;
+  end;
+
+  if (not(flagLeft)) then // вставляем поверхности справа
+  begin
+    // Вставляем правый внутренний полуоткрытый цилиндр
+    begin
+
+      X1 := round(pSurf(OutsideSurfaces[Id]).point[0].X);
+      X2 := round(pSurf(OutsideSurfaces[Id]).point[0].X - podrezTorec);
+      Y1 := round(tochitPover);
+      Y2 := round(tochitPover);
+      Kod_Pover_A_PKDA := -2112;
+      Uslov_kod_pover_A_NUSL := 9912;
+      Index := Id + 1;
+      // если да, то изменяем лишь размеры
+      if (existInnerHalfopenCylinder) then
+      begin
+        pSurf(InnerSurfaces[i]).point[0].X := X1;
+        pSurf(InnerSurfaces[i]).point[1].X := X2;
+        pSurf(InnerSurfaces[i]).point[0].Y := Y1;
+        pSurf(InnerSurfaces[i]).point[1].Y := Y2;
+      end
+      // если нет, то вставляем поверхность
+      else
+        InsertSurf(false, X1, X2, Y1, Y2, Index, nomerPovTorec,
+          Kod_Pover_A_PKDA, Uslov_kod_pover_A_NUSL);
+    end;
+
+    // Вставляем правый внутренний полуоткрытый торец
+    begin
+
+      X1 := round(pSurf(OutsideSurfaces[Id]).point[0].X - podrezTorec);
+      X2 := round(pSurf(OutsideSurfaces[Id]).point[0].X - podrezTorec);
+      Y1 := round(tochitPover);
+      Y2 := 0;
+      Kod_Pover_A_PKDA := -2132;
+      number := nomerPovTorec + 1;
+      Uslov_kod_pover_A_NUSL := 9913;
+      Index := Id + 1;
+      if (existInnerHalfopenCylinder) then
+      begin
+        pSurf(InnerSurfaces[i]).point[0].X := X1;
+        pSurf(InnerSurfaces[i]).point[1].X := X2;
+        pSurf(InnerSurfaces[i]).point[0].Y := Y1;
+        pSurf(InnerSurfaces[i]).point[1].Y := Y2;
+      end
+      else
+        InsertSurf(false, X1, X2, Y1, Y2, Index, number, Kod_Pover_A_PKDA,
+          Uslov_kod_pover_A_NUSL);
+    end;
+  end // закрываем "if ((flagLeft)).."
+
+  else // вставляем поверхности слева
+  begin
+
+    // Вставляем левый внутренний полуоткрытый цилиндр
+    begin
+      X1 := round(pSurf(OutsideSurfaces[0]).point[0].X);
+      X2 := round(pSurf(OutsideSurfaces[0]).point[0].X + podrezTorec);
+      Y1 := round(tochitPover);
+      Y2 := round(tochitPover);
+      Kod_Pover_A_PKDA := -2112;
+      Uslov_kod_pover_A_NUSL := 9912;
+      Index := Id + 1;
+      if (existInnerHalfopenCylinder) then
+      begin
+        pSurf(InnerSurfaces[i]).point[0].X := X1;
+        pSurf(InnerSurfaces[i]).point[1].X := X2;
+        pSurf(InnerSurfaces[i]).point[0].Y := Y1;
+        pSurf(InnerSurfaces[i]).point[1].Y := Y2;
+      end
+      else
+        InsertSurf(false, X1, X2, Y1, Y2, Index, nomerPovTorec,
+          Kod_Pover_A_PKDA, Uslov_kod_pover_A_NUSL);
+    end;
+
+    // Вставляем левый внутренний полуоткрытый торец
+    begin
+      X1 := round(pSurf(OutsideSurfaces[0]).point[0].X + podrezTorec);
+      X2 := round(pSurf(OutsideSurfaces[0]).point[0].X + podrezTorec);
+      Y1 := round(tochitPover);
+      Y2 := 0;
+      Kod_Pover_A_PKDA := -2132;
+      number := nomerPovTorec + 1;
+      Uslov_kod_pover_A_NUSL := 9913;
+      Index := Id + 1;
+      if (existInnerHalfopenCylinder) then
+      begin
+        pSurf(InnerSurfaces[i + 1]).point[0].X := X1;
+        pSurf(InnerSurfaces[i + 1]).point[1].X := X2;
+        pSurf(InnerSurfaces[i + 1]).point[0].Y := Y1;
+        pSurf(InnerSurfaces[i + 1]).point[1].Y := Y2;
+      end
+      else
+        InsertSurf(false, X1, X2, Y1, Y2, Index, number, Kod_Pover_A_PKDA,
+          Uslov_kod_pover_A_NUSL);
+    end;
+
+  end;
+
+  i := InnerSurfaces.Count;
+
+  // изменяем размеры внутренних цилиндров с меньшими диаметроми
+  while i <> 0 do
+  begin
+    i := i - 1;
+    if ((pSurf(InnerSurfaces[i]).PKDA = -2112) and
+      (pSurf(InnerSurfaces[i]).point[0].Y < Y1)) then
+    begin
+      case flagLeft of
+        true:
+          pSurf(InnerSurfaces[i]).point[0].X := X2;
+        false:
+          pSurf(InnerSurfaces[i]).point[0].X := X1;
+      end;
+      break;
+    end;
+
+    if ((pSurf(InnerSurfaces[i]).PKDA = -2111) and
+      (pSurf(InnerSurfaces[i]).point[0].Y < Y1)) then
+    begin
+      case flagLeft of
+        true:
+          pSurf(InnerSurfaces[i]).point[0].X := X2;
+        false:
+          pSurf(InnerSurfaces[i]).point[1].X := X1;
+      end;
+      break;
+    end;
+  end;
+
+end;
+
+procedure TSketchView.Insert_OpenInnerCylinder(currentTransition: ptrTrans;
+  nomerPovTorec: integer; diametr: single);
+var
+  i: integer;
+  surface, surface1: pSurf;
+  existInnerOpenCylinder: boolean;
+  X1, X2, Y1, Y2: integer;
+  Index: integer;
+  Kod_Pover_A_PKDA, Uslov_kod_pover_A_NUSL: integer;
+
+begin
+
+  existInnerOpenCylinder := false;
+
+  // проверяем, есть ли уже внутренний открытый цилиндр
+  for i := 0 to InnerSurfaces.Count - 1 do
+  begin
+    if (pSurf(InnerSurfaces[i]).NUSL = 9910) then
+    begin
+      existInnerOpenCylinder := true;
+      break;
+    end;
+  end;
+
+  // если да, то изменяем лишь размеры
+  if (existInnerOpenCylinder) then
+  begin
+    pSurf(InnerSurfaces[i]).point[0].Y := round(diametr);
+    pSurf(InnerSurfaces[i]).point[1].Y := round(diametr);
+  end
+  // если нет, то вставляем поверхность
+  else
+  begin
+
+    X1 := round(pSurf(OutsideSurfaces[0]).point[0].X);
+    // вырез на всю длину детали
+    X2 := round(pSurf(OutsideSurfaces[OutsideSurfaces.Count - 1]).point[0].X);
+    Y1 := round(diametr);
+    Y2 := round(diametr);
+
+    Kod_Pover_A_PKDA := -2111;
+    Uslov_kod_pover_A_NUSL := 9910;
+    Index := 0;
+    InsertSurf(false, X1, X2, Y1, Y2, Index, nomerPovTorec, Kod_Pover_A_PKDA,
+      Uslov_kod_pover_A_NUSL);
+
+  end;
+end;
+
+// Считает масштаб вывода детали на экран и сдвиг по осям X и Y
+// m_metric - масштаб; m_dx, m_dy - смещение
+procedure TSketchView.SetMetric;
+var
+  len, heig: single;
+  lm, hm: single;
+begin
+
+  // Принимаем входные данные из класса InputData
+  DiamZagot := TInputData.GetDiamZagot;
+  LenZagot := TInputData.GetLengthZagot;
+
+  // мах длина детали
+  len := LenZagot;
+  // мах высота детали
+  heig := DiamZagot;
+
+  lm := ((m_Screen.Right - m_Screen.Left) / m_Zoom) / len;
+  hm := ((m_Screen.Bottom - m_Screen.Top) / (m_Zoom)) / heig;
+  if lm < hm then
+    m_metric := lm
+  else
+    m_metric := hm;
+  // смещение при выводе
+  m_dx := m_Screen.Left +
+    round((m_Screen.Right - m_Screen.Left - len * m_metric) / 2);
+  m_dy := (m_Screen.Top + round((m_Screen.Bottom - m_Screen.Top) / 2) - 150);
+
+end;
+
+procedure TSketchView.Resize_Torec(newSize: single;
+  Uslov_kod_pover_A_NUSL: integer);
+var
+  i, j: integer;
+  maxsLenth: single;
+begin
+
+  // находим длину правого торца
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+    if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
+      maxsLenth := pSurf(OutsideSurfaces[i]).point[0].X;
+  end;
+
+  for i := 0 to OutsideSurfaces.Count - 1 do
+    if (pSurf(OutsideSurfaces[i]).PKDA = 2131) then
+      // если подрезаем правый торец
+      if (pSurf(OutsideSurfaces[i]).NUSL = 9907) and
+        (Uslov_kod_pover_A_NUSL = 9907) then
+      begin
+        pSurf(OutsideSurfaces[i - 1]).point[1].X := round(newSize);
+        pSurf(OutsideSurfaces[i]).point[0].X := round(newSize);
+        pSurf(OutsideSurfaces[i]).point[1].X := round(newSize);
+
+        // проходим внутренние поверхности
+        for j := 0 to InnerSurfaces.Count - 1 do
+        begin
+          if (pSurf(InnerSurfaces[j]).point[0].X > round(newSize)) then
+            pSurf(InnerSurfaces[j]).point[0].X := round(newSize);
+
+          if (pSurf(InnerSurfaces[j]).point[1].X > round(newSize)) then
+            pSurf(InnerSurfaces[j]).point[1].X := round(newSize);
+        end;
+
+        // если до этого подрезали левый торец, то прибавляем величину отрезки к размеру правого торца
+        if (flagPodrezLevTorec) then
+        begin
+          pSurf(OutsideSurfaces[i - 1]).point[1].X :=
+            pSurf(OutsideSurfaces[i - 1]).point[1].X + round(razmLeftPodrez);
+          pSurf(OutsideSurfaces[i]).point[0].X := pSurf(OutsideSurfaces[i])
+            .point[0].X + round(razmLeftPodrez);
+          pSurf(OutsideSurfaces[i]).point[1].X := pSurf(OutsideSurfaces[i])
+            .point[1].X + round(razmLeftPodrez);
+        end;
+        break;
+      end
+      // если подрезаем левый торец
+      else if (pSurf(OutsideSurfaces[i]).NUSL = 9901) and
+        (Uslov_kod_pover_A_NUSL = 9901) then
+      begin
+        pSurf(OutsideSurfaces[i + 1]).point[0].X := round(maxsLenth - newSize);
+        pSurf(OutsideSurfaces[i]).point[0].X := round(maxsLenth - newSize);
+        pSurf(OutsideSurfaces[i]).point[1].X := round(maxsLenth - newSize);
+
+        // проходим внутренние поверхности
+        for j := 0 to InnerSurfaces.Count - 1 do
+        begin
+          if (pSurf(InnerSurfaces[j]).point[0].X < round(maxsLenth - newSize))
+          then
+            pSurf(InnerSurfaces[j]).point[0].X := round(maxsLenth - newSize);
+
+          if (pSurf(InnerSurfaces[j]).point[1].X < round(maxsLenth - newSize))
+          then
+            pSurf(InnerSurfaces[j]).point[1].X := round(maxsLenth - newSize);
+        end;
+
+        // Если мы подрезали торец слева, то добавляем  размер подрезки ко всем последующим переходам подрезки
+        flagPodrezLevTorec := true;
+        razmLeftPodrez := round(maxsLenth - newSize);
+
+        break;
+      end;
+
+end;
+
+procedure TSketchView.CreateFirstSurface;
+var
+  surface: pSurf;
+begin
+
+  // Поверхность №1
+  new(surface);
+  surface.point[0].X := 0;
+  surface.point[0].Y := 0;
+  surface.point[1].X := 0;
+  surface.point[1].Y := round(DiamZagot);
+  surface.number := 1;
+  surface.L_POVB := 0;
+  surface.R_POVV := 2;
+  surface.PKDA := 2131;
+  surface.NUSL := 9901;
+  surface.PRIV := 3;
+  OutsideSurfaces.Add(surface);
+
+  // Поверхность №2
+  new(surface);
+  surface.point[0].X := 0;
+  surface.point[0].Y := round(DiamZagot);
+  surface.point[1].X := round(LenZagot);
+  surface.point[1].Y := round(DiamZagot);
+  surface.number := 2;
+  surface.L_POVB := 1;
+  surface.R_POVV := 3;
+  surface.PKDA := 2111;
+  surface.NUSL := 9900;
+  surface.PRIV := 0;
+  OutsideSurfaces.Add(surface);
+
+  // Поверхность №3
+  new(surface);
+  surface.point[0].X := round(LenZagot);
+  surface.point[0].Y := round(DiamZagot);
+  surface.point[1].X := round(LenZagot);
+  surface.point[1].Y := 0;
+  surface.number := 3;
+  surface.L_POVB := 2;
+  surface.R_POVV := 0;
+  surface.PKDA := 2131;
+  surface.NUSL := 9907;
+  surface.PRIV := 1;
+  OutsideSurfaces.Add(surface);
+
+end;
+
+// Отрисовка поверхностей
+procedure TSketchView.Draw(canvas: TCanvas);
+var
+  i: integer;
+  point: array [0 .. 1] of TPOINT;
+  textCoord: string;
+begin
+
+  // сортирует поверхности последовательно на основании возрастания координат
+  OutsideSurfaces.Sort(Comp);
+  // InnerSurfaces.Sort(Comp);
+  // преобразование координат поверхностей для нормального отображения на форме
+  ConvertingPoint;
+
+  with canvas do
+  begin
+
+    // отрисовка внешних поверхностей
+    begin
+      Pen.Width := 2;
+      Pen.Color := clBlack;
+      Pen.Style := psSolid;
+      for i := 0 to ScaleSurfaces.Count - 1 do
+      begin
+        point[0].X := pSurf(ScaleSurfaces[i]).point[0].X;
+        point[0].Y := pSurf(ScaleSurfaces[i]).point[0].Y;
+        point[1].X := pSurf(ScaleSurfaces[i]).point[1].X;
+        point[1].Y := pSurf(ScaleSurfaces[i]).point[1].Y;
+
+        textCoord := '(' + pSurf(OutsideSurfaces[i]).point[0].X.tostring + ', '
+          + pSurf(OutsideSurfaces[i]).point[0].Y.tostring + ' )';
+        TextOut( (* координаты *) point[0].X + 3, point[0].Y + 2, textCoord);
+
+        MoveTo(point[0].X, point[0].Y);
+        LineTo(point[1].X, point[1].Y);
+      end;
+    end;
+
+    // рисуем ось
+    begin
+      Pen.Style := psDot;
+      Pen.Width := 1;
+      point[1].X := pSurf(ScaleSurfaces[ScaleSurfaces.Count - 1]).point[1].X;
+      point[1].Y := pSurf(ScaleSurfaces[ScaleSurfaces.Count - 1]).point[1].Y;
+      point[0].X := pSurf(ScaleSurfaces[0]).point[0].X;
+      point[0].Y := pSurf(ScaleSurfaces[0]).point[0].Y;
+
+      TextOut(point[1].X + 3, point[1].Y + 2,
+        (* текст *) '(' + pSurf(OutsideSurfaces[OutsideSurfaces.Count - 1])
+        .point[1].X.tostring + ', ' +
+        pSurf(OutsideSurfaces[OutsideSurfaces.Count - 1])
+        .point[1].Y.tostring + ' )');
+
+      MoveTo(point[1].X, point[1].Y);
+      LineTo(point[0].X, point[0].Y);
+    end;
+
+    // рисуем внутренний контур
+    begin
+      Pen.Style := psSolid;
+      Pen.Width := 2;
+      if InnerScaleSurfaces.Count > 0 then
+        // отрисовка внутренних поверхностей
+        for i := 0 to InnerScaleSurfaces.Count - 1 do
+        begin
+          point[0].X := pSurf(InnerScaleSurfaces[i]).point[0].X;
+          point[0].Y := pSurf(InnerScaleSurfaces[i]).point[0].Y;
+          point[1].X := pSurf(InnerScaleSurfaces[i]).point[1].X;
+          point[1].Y := pSurf(InnerScaleSurfaces[i]).point[1].Y;
+
+          TextOut(point[0].X + 3, point[0].Y + 2, '(' + pSurf(InnerSurfaces[i])
+            .point[0].X.tostring + ', ' + pSurf(InnerSurfaces[i])
+            .point[0].Y.tostring + ' )');
+
+          MoveTo(point[0].X, point[0].Y);
+          LineTo(point[1].X, point[1].Y);
+        end;
+    end;
+
+  end;
+
+end;
+
+// Находим поверхность привязки для вставляемого выреза
+function TSketchView.GetInnetSurfPriv(insertDiam: single;
+  flagLeft: boolean): integer;
+var
+  i, number: integer;
+  maxLength: single;
+  // true, если прошли максимальный диаметр
+  // flagMaxDiam: boolean;
+begin
+
+  if (not(flagLeft)) then
+    // Находим индекс поверхности "правый торец"
+    for i := 0 to OutsideSurfaces.Count - 1 do
+    begin
+      if ((pSurf(OutsideSurfaces[i]).PKDA = 2131) and
+        (pSurf(OutsideSurfaces[i]).NUSL = 9907)) then
+        number := i;
+    end
+  else
+    // Находим индекс поверхности "левый торец"
+    for i := 0 to OutsideSurfaces.Count - 1 do
+    begin
+      if ((pSurf(OutsideSurfaces[i]).PKDA = 2131) and
+        (pSurf(OutsideSurfaces[i]).NUSL = 9901)) then
+        number := i;
+    end;
+
+  Result := number;
+
+end;
+
+function TSketchView.GetOutsideSurfPriv(insertDiam: single;
+  flagLeft: boolean): integer;
+var
+  i, numberSurf, numberMaxSurf: integer;
+  // true, если прошли максимальный диаметр
+  flagMaxDiam: boolean;
+begin
+
+  numberSurf := -1;
+
+  // находим индекс поверхности с максимальным диаметром
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+    if (pSurf(OutsideSurfaces[i]).PKDA = 2111) then
+      numberMaxSurf := i;
+  end;
+
+  flagMaxDiam := false;
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+
+    // установление флага максимального диаметра
+    if (pSurf(OutsideSurfaces[i]).PKDA = 2111) then
+      flagMaxDiam := true;
+
+    // если вставляемый вырез справа и вставляем после полуоткрытого цилиндра
+    if ((flagMaxDiam) and (not(flagLeft))) then
+    begin
+      if (pSurf(OutsideSurfaces[i]).PKDA = 2112) and
+        (pSurf(OutsideSurfaces[i]).point[0].Y > insertDiam) then
+      begin
+        numberSurf := i;
+        // А здесь не выходим из цикла почему-то
+        // break;
+      end;
+    end;
+
+    // если вставляемый вырез слева и вставляем до полуоткрытого цилиндра
+    if (not(flagMaxDiam) and (flagLeft)) then
+    begin
+      if (pSurf(OutsideSurfaces[i]).PKDA = 2112) and
+        (pSurf(OutsideSurfaces[i]).point[0].Y > insertDiam) then
+      begin
+        numberSurf := i;
+        // если нашли диаметр, удовлетворяющий условию, то сразу выходим из цикла
+        break;
+      end;
+    end;
+  end;
+
+  if (numberSurf = -1) then
+    Result := numberMaxSurf
+  else
+    Result := numberSurf;
+end;
+
+end.
+

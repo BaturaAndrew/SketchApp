@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.508,=F:\Batura\Developing\Delphi\Sketching\InputData.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.775,=F:\Batura\Developing\Delphi\Sketching\SQLConnection.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.458,D:\Мои документы\Embarcadero\Studio\Projects\SketchApp.dproj=D:\Мои документы\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.247,D:\Мои документы\Embarcadero\Studio\Projects\SketchForm.dfm=D:\Мои документы\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.208,=F:\Batura\GitHUB\Sketching\ModelSupport_SketchApp\default.txaPackage</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.481,=F:\Batura\GitHUB\Sketching\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.546,F:\Batura\GitHUB\Sketching\Unit1.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.629,=F:\Batura\GitHUB\Sketching\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.503,F:\Batura\GitHUB\Sketching\Unit1.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.436,F:\Batura\Developing\Delphi\Sketching\Unit1.pas=F:\Batura\Developing\Delphi\Sketching\ProcessTrans.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.522,=F:\Batura\GitHUB\Sketching\Unit2.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.278,=D:\Мои документы\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.869,=F:\Batura\Developing\Delphi\Sketching\Sapr.ini</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.801,F:\Batura\Developing\Delphi\Sketching\SketchApp.dproj=D:\Мои документы\Embarcadero\Studio\Projects\SketchApp.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.471,=F:\Batura\Developing\Delphi\Sketching\DataModule.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.755,=F:\Batura\Developing\Delphi\Sketching\SketchView.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.863,=F:\Batura\Developing\Delphi\Sketching\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.733,=F:\Batura\Developing\Delphi\Sketching\SketchForm.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.247,D:\Мои документы\Embarcadero\Studio\Projects\SketchForm.pas=D:\Мои документы\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+  </Transactions>
+	<ProjectSortOrder AutoSort="0" SortType="0">
+    <File Path="ModelSupport_SketchApp"/>
+    <File Path="ModelSupport_SketchApp\default.txaPackage"/>
+    <File Path="DataModule.pas"/>
+    <File Path="DataModule.dfm"/>
+    <File Path="InputData.pas"/>
+    <File Path="ProcessTrans.pas"/>
+    <File Path="SketchForm.pas"/>
+    <File Path="SketchForm.dfm"/>
+    <File Path="SketchView.pas"/>
+    <File Path="SQLConnection.pas"/>
+  </ProjectSortOrder>
+</BorlandProject>
