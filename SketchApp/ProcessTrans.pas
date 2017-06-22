@@ -34,6 +34,8 @@ type
 
     function PositionCut: boolean;
 
+    function IsClosed: boolean;
+
     // Заполенение ValueListEditor1  информацией о текущем переходе
     procedure FillList(trans: ptrTransition);
   public
@@ -206,6 +208,11 @@ begin
   detal := StrToInt(MainForm.Kod_detal.Text);
   // Читаем данные о технологических переходах для детали с кодом Kod_detal
   m_InputData.ReadSQLDataTransitions(detal);
+
+end;
+
+function TProcessingTransition.IsClosed: boolean;
+begin
 
 end;
 
