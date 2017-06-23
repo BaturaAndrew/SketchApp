@@ -72,7 +72,6 @@ type
     // list для хранения информации о поверхностях
     listSurface: TList;
 
-  private
     // list для хранения информации о переходах
     listTrans: TList;
 
