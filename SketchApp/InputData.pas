@@ -68,6 +68,8 @@ type
     currTrans: ptrTrans;
     // объект, хранящий информацию о переходе, связанном с текущим
     joinTrans: ptrTrans;
+    // второй переход, связанный с текущим (для закрытых цилиндров)
+    joinTrans2: ptrTrans;
 
     // list для хранения информации о поверхностях
     listSurface: TList;
@@ -111,6 +113,8 @@ begin
   new(currTrans);
   joinTrans := nil;
   new(joinTrans);
+    joinTrans2 := nil;
+  new(joinTrans2);
 
 end;
 
@@ -189,6 +193,8 @@ begin
   new(currTrans);
   joinTrans := nil;
   new(joinTrans);
+   joinTrans2 := nil;
+  new(joinTrans2);
 end;
 
 procedure TInputData.ReadSQLDataTransitions(detal: integer);

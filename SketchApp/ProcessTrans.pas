@@ -6,6 +6,8 @@ uses SysUtils, Dialogs, Classes, InputData, Generics.Collections, SketchView;
 
 type
 
+  paramSurfSizes = array [0 .. 2] of single;
+
   // указатель на запись
   ptrTransition = InputData.ptrTrans;
 
@@ -26,6 +28,8 @@ type
 
     procedure MakeOutsideHalfOpenCylinder;
 
+    procedure MakeOutsideClosedCylinder;
+
     procedure CutTorec;
 
     procedure MakeInnerOpenCylinder;
@@ -42,6 +46,9 @@ type
 
     // «аполенение ValueListEditor1  информацией о текущем переходе
     procedure FillList(trans: ptrTransition);
+
+    function GetSurfSize(NPVA: integer): paramSurfSizes;
+
   public
     // ќбъект хран€щий входные данные (информаци€ о переходе)
     m_InputData: TInputData;
@@ -141,11 +148,24 @@ begin
     if (m_InputData.currTrans.PKDA = 2131) then
       CutTorec;
 
-    // ≈сли делаем полуоткрытую выемку
-    if ((m_InputData.currTrans.PKDA = 2132) or
-      (m_InputData.currTrans.PKDA = 2112) or (m_InputData.currTrans.PKDA = 3212))
-    then
-      MakeOutsideHalfOpenCylinder;
+    // провер€ем, что делаем: полуоткрытый цилиндр
+    begin
+      // если в переходах первый переход - "точить"
+      if ((m_InputData.currTrans.PKDA = 2112) or
+        (m_InputData.currTrans.PKDA = 3212)or
+        (m_InputData.currTrans.PKDA = 2111)) then
+        if not(IsClosed(m_InputData.currTrans.NPVA)) then
+          MakeOutsideHalfOpenCylinder;
+      // если в переходах первый переход - "точить"
+      if (m_InputData.currTrans.PKDA = 2132) then
+        if not(IsClosed(m_InputData.currTrans.R_POVV)) then
+          MakeOutsideHalfOpenCylinder;
+    end;
+    // или закрытый
+    if (m_InputData.currTrans.PKDA = 2112)or
+        (m_InputData.currTrans.PKDA = 2111) then
+      if (IsClosed(m_InputData.currTrans.NPVA)) then
+        MakeOutsideClosedCylinder;
 
     // ≈сли делаем вырезы
     str := IntToStr(m_InputData.currTrans.PKDA);
@@ -198,6 +218,27 @@ begin
     else
       MainForm.ValueListEditor1.InsertRow('Perex', trans.PerexUserText, true);
   end;
+
+end;
+
+function TProcessingTransition.GetSurfSize(NPVA: integer): paramSurfSizes;
+var
+  i: integer;
+  mass: paramSurfSizes;
+begin
+  for i := 0 to 2 do
+    mass[i] := 0;
+
+  // находим размеры поверхности
+  for i := 0 to m_InputData.listSurface.Count - 1 do
+    if (pSurf(m_InputData.listSurface[i]).number = NPVA) then
+    begin
+      mass[0] := pSurf(m_InputData.listSurface[i]).Sizes[0];
+      mass[1] := pSurf(m_InputData.listSurface[i]).Sizes[1];
+      mass[2] := pSurf(m_InputData.listSurface[i]).Sizes[2];
+    end;
+
+  result := mass;
 
 end;
 
@@ -275,7 +316,46 @@ begin
 
 end;
 
-// ¬ставка наружной полуоткрытой выемки(полуоткрытого цилиндра и торца)
+// ¬ставка закрытого цилиндра
+procedure TProcessingTransition.MakeOutsideClosedCylinder;
+var
+  i: integer;
+  // если true, то вырез слева, иначе - справа
+  flagLeft: boolean;
+  tochitPover, podrezTorec: single;
+  nomerPovTorec: integer;
+  nomerPriv: integer;
+
+  leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec, diamHalfopenedCyl,
+    lengthHalfopenedCyl: single;
+begin
+
+  // читаем данные перехода, св€занного  с текущим
+  m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1);
+  // читаем данные перехода, св€занного  с текущим
+  m_InputData.ReadCurrentTransition(m_InputData.joinTrans2, i_trans + 2);
+
+  // устанавливаем размеры
+  begin
+    leftTor := m_InputData.joinTrans.SizesFromTP[2];
+    diamClosedCyl := m_InputData.currTrans.SizesFromTP[0];
+    lengthClosedCylindr := GetSurfSize(m_InputData.currTrans.NPVA)[1];
+    rightTorec := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
+    diamHalfopenedCyl := m_InputData.joinTrans2.SizesFromTP[0];
+    lengthHalfopenedCyl := GetSurfSize(m_InputData.joinTrans2.NPVA)[1];
+
+  end;
+  MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
+    flagLeft, leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
+    diamHalfopenedCyl, lengthHalfopenedCyl);
+
+  FillList(m_InputData.currTrans);
+
+  // если делаем закрытый цилиндр, то обрабатываем сразу 3 перехода и два перехода пропускаем
+  skipTrans := skipTrans + 2;
+
+end;
+
 procedure TProcessingTransition.MakeOutsideHalfOpenCylinder;
 var
   i: integer;
@@ -291,13 +371,11 @@ begin
   if ((m_InputData.currTrans.PKDA = 2132) or
     ((m_InputData.currTrans.PKDA = 2112) and (m_InputData.currTrans.SizesFromTP
     [2] = 0))) then
-
   begin
-
     // читаем данные перехода, св€занного  с текущим
     m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1);
-
   end;
+
   // определение положение выемок
   flagLeft := PositionCut;
 
@@ -336,8 +414,6 @@ begin
       // номер поверхности нового торца
       nomerPovTorec := m_InputData.currTrans.NPVA;
 
-      IfClosedCylindr(m_InputData.currTrans.R_POVV, podrezTorec, nomerPriv);
-
       // вставл€ем поверхности
       MainForm.m_sketchView.Insert_OutsideHalfopenSurfaces
         (m_InputData.currTrans, flagLeft, 0, nomerPovTorec, podrezTorec,
@@ -353,8 +429,6 @@ begin
       podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
       tochitPover := m_InputData.currTrans.SizesFromTP[0];
       nomerPovTorec := m_InputData.joinTrans.NPVA;
-
-      IfClosedCylindr(m_InputData.currTrans.R_POVV, podrezTorec, nomerPriv);
 
       MainForm.m_sketchView.Insert_OutsideHalfopenSurfaces
         (m_InputData.joinTrans, flagLeft, 0, nomerPovTorec, podrezTorec,
