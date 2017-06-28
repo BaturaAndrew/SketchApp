@@ -152,7 +152,7 @@ begin
     begin
       // если в переходах первый переход - "точить"
       if ((m_InputData.currTrans.PKDA = 2112) or
-        (m_InputData.currTrans.PKDA = 3212)or
+        (m_InputData.currTrans.PKDA = 3212) or
         (m_InputData.currTrans.PKDA = 2111)) then
         if not(IsClosed(m_InputData.currTrans.NPVA)) then
           MakeOutsideHalfOpenCylinder;
@@ -162,8 +162,8 @@ begin
           MakeOutsideHalfOpenCylinder;
     end;
     // или закрытый
-    if (m_InputData.currTrans.PKDA = 2112)or
-        (m_InputData.currTrans.PKDA = 2111) then
+    if (m_InputData.currTrans.PKDA = 2112) or (m_InputData.currTrans.PKDA = 2111)
+    then
       if (IsClosed(m_InputData.currTrans.NPVA)) then
         MakeOutsideClosedCylinder;
 
@@ -335,21 +335,33 @@ begin
   // читаем данные перехода, связанного  с текущим
   m_InputData.ReadCurrentTransition(m_InputData.joinTrans2, i_trans + 2);
 
-  // устанавливаем размеры
+  // определение положение закрытого цилиндра
+  flagLeft := PositionCut;
+
+  diamClosedCyl := m_InputData.currTrans.SizesFromTP[0];
+  lengthClosedCylindr := GetSurfSize(m_InputData.currTrans.NPVA)[1];
+  diamHalfopenedCyl := m_InputData.joinTrans2.SizesFromTP[0];
+  lengthHalfopenedCyl := GetSurfSize(m_InputData.joinTrans2.NPVA)[1];
+
+  // устанавливаем размеры для торцев в зависимости от расположения относительно максимального диаметра
+  if flagLeft then
+  begin
+    leftTor := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
+    rightTorec := m_InputData.joinTrans.SizesFromTP[2];
+  end
+  else if not(flagLeft) then
   begin
     leftTor := m_InputData.joinTrans.SizesFromTP[2];
-    diamClosedCyl := m_InputData.currTrans.SizesFromTP[0];
-    lengthClosedCylindr := GetSurfSize(m_InputData.currTrans.NPVA)[1];
     rightTorec := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
-    diamHalfopenedCyl := m_InputData.joinTrans2.SizesFromTP[0];
-    lengthHalfopenedCyl := GetSurfSize(m_InputData.joinTrans2.NPVA)[1];
-
   end;
+
   MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
     flagLeft, leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
     diamHalfopenedCyl, lengthHalfopenedCyl);
 
   FillList(m_InputData.currTrans);
+  FillList(m_InputData.joinTrans);
+  FillList(m_InputData.joinTrans2);
 
   // если делаем закрытый цилиндр, то обрабатываем сразу 3 перехода и два перехода пропускаем
   skipTrans := skipTrans + 2;
