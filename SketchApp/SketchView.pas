@@ -223,7 +223,8 @@ begin
   // ????????????????????????????? разобраться
   numPriv := 1;
   // вычисляем индекс поверхности-цилиндра, к которой будем привязывать выемку
-  Id := GetOutsideSurfPriv(leftTor, flagLeft);
+  // на основе диаметра вставляемого цилиндра
+  Id := GetOutsideSurfPriv(diamClosedCyl, flagLeft);
   nomerPov := currTrans.NPVA;
   if (not(flagLeft)) then
   begin
@@ -894,6 +895,41 @@ begin
     round((m_Screen.Right - m_Screen.Left - len * m_metric) / 2);
   m_dy := (m_Screen.Top + round((m_Screen.Bottom - m_Screen.Top) / 2) - 150);
 
+end;
+
+procedure TSketchView.Resize_Cylinder(currTrans: ptrTrans);
+var
+  i, j: integer;
+  newSize: single;
+begin
+  newSize := currTrans.SizesFromTP[0];
+  // находим цилиндр максимального диаметра
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+    if (pSurf(OutsideSurfaces[i]).PKDA = 2111) then
+    begin
+
+      // изменяем диаметр открытого цилиндра
+      pSurf(OutsideSurfaces[i]).point[0].Y := round(newSize);
+      pSurf(OutsideSurfaces[i]).point[1].Y := round(newSize);
+
+      // изменяем максимальную координату левого торца
+      if (pSurf(OutsideSurfaces[i - 1]).point[1].Y >
+        pSurf(OutsideSurfaces[i - 1]).point[0].Y) then
+        pSurf(OutsideSurfaces[i - 1]).point[1].Y := round(newSize)
+      else
+        pSurf(OutsideSurfaces[i - 1]).point[0].Y := round(newSize);
+
+      // изменяем максимальную координату правого торца
+      if (pSurf(OutsideSurfaces[i - 1]).point[1].Y >
+        pSurf(OutsideSurfaces[i + 1]).point[0].Y) then
+        pSurf(OutsideSurfaces[i + 1]).point[1].Y := round(newSize)
+      else
+        pSurf(OutsideSurfaces[i + 1]).point[0].Y := round(newSize);
+
+    end;
+
+  end;
 end;
 
 procedure TSketchView.Resize_Torec(currTrans: ptrTrans);
