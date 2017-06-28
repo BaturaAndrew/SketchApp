@@ -87,14 +87,13 @@ type
     // „тение информации о текущем переходе
     procedure ReadCurrentTransition(var currentTransition: ptrTrans;
       i_trans: integer);
+    // очищаем переходы предыдущей детали
+    procedure ClearPrevTransitions;
 
   private
-
     // дописываем параметры поверхности, прив€занной к переходу
     function GetSurfParam(detal: integer; id: integer): paramSurfArray;
 
-    // очищаем переходы предыдущей детали
-    procedure ClearPrevTransitions;
   end;
 
 implementation
@@ -113,7 +112,7 @@ begin
   new(currTrans);
   joinTrans := nil;
   new(joinTrans);
-    joinTrans2 := nil;
+  joinTrans2 := nil;
   new(joinTrans2);
 
 end;
@@ -165,17 +164,11 @@ var
 begin
 
   currentTransition.NPVA := ptrTrans(listTrans[i_trans]).NPVA;
-
   currentTransition.L_POVB := ptrTrans(listTrans[i_trans]).L_POVB;
-
   currentTransition.R_POVV := ptrTrans(listTrans[i_trans]).R_POVV;
-
   currentTransition.PKDA := ptrTrans(listTrans[i_trans]).PKDA;
-
   currentTransition.NUSL := ptrTrans(listTrans[i_trans]).NUSL;
-
   currentTransition.PRIV := ptrTrans(listTrans[i_trans]).PRIV;
-
   currentTransition.PerexUserText := ptrTrans(listTrans[i_trans]).PerexUserText;
 
   for i := 0 to 2 do
@@ -186,14 +179,11 @@ end;
 
 procedure TInputData.ClearPrevTransitions;
 begin
-  listTrans.Clear;
-  listSurface.Clear;
-  countTransitions := 0;
   currTrans := nil;
   new(currTrans);
   joinTrans := nil;
   new(joinTrans);
-   joinTrans2 := nil;
+  joinTrans2 := nil;
   new(joinTrans2);
 end;
 

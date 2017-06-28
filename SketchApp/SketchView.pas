@@ -71,7 +71,10 @@ type
       tochitPover: single = 0);
 
     // изменение размера левого или правого торца
-    procedure Resize_Torec(newSize: single; Uslov_kod_pover_A_NUSL: integer);
+    procedure Resize_Torec(currTrans: ptrTrans);
+
+    // изменение размера цилиндра
+    procedure Resize_Cylinder(currTrans: ptrTrans);
 
   private
     // ѕреобразование координат поверхностей с учетом смещений и масштаба
@@ -217,7 +220,7 @@ var
   numPriv: integer;
   nomerPov: integer;
 begin
-
+  // ????????????????????????????? разобратьс€
   numPriv := 1;
   // вычисл€ем индекс поверхности-цилиндра, к которой будем прив€зывать выемку
   Id := GetOutsideSurfPriv(leftTor, flagLeft);
@@ -306,6 +309,7 @@ begin
       end
       else
         X1 := round(leftTor + lengthClosedCylindr);
+
       if (numPriv <> 1) then
       begin
         // X2 := round(pSurf(OutsideSurfaces[Id]).point[0].X + podrezTorec);
@@ -313,19 +317,19 @@ begin
       else
       begin
 
-        // измен€ем размеры правого торца
-        for i := 0 to OutsideSurfaces.Count - 1 do
-        begin
-          if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
-          begin
-
-            X2 := pSurf(OutsideSurfaces[i]).point[0].X;
-            pSurf(OutsideSurfaces[i]).point[0].Y := round(diamHalfopenedCyl);;
-          end;
-        end;
-
-        // X2 := round(leftTor + lengthClosedCylindr + lengthHalfopenedCyl);
       end;
+
+      // измен€ем размеры правого торца
+      for i := 0 to OutsideSurfaces.Count - 1 do
+      begin
+        if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
+        begin
+
+          X2 := pSurf(OutsideSurfaces[i]).point[0].X;
+          pSurf(OutsideSurfaces[i]).point[0].Y := round(diamHalfopenedCyl);;
+        end;
+      end;
+
       Y1 := round(diamHalfopenedCyl);
       Y2 := round(diamHalfopenedCyl);
       Kod_PKDA := 2112;
@@ -892,12 +896,16 @@ begin
 
 end;
 
-procedure TSketchView.Resize_Torec(newSize: single;
-  Uslov_kod_pover_A_NUSL: integer);
+procedure TSketchView.Resize_Torec(currTrans: ptrTrans);
 var
   i, j: integer;
   maxsLenth: single;
+  newSize: single;
+  Uslov_kod_pover_A_NUSL: integer;
 begin
+
+  newSize := currTrans.SizesFromTP[2];
+  Uslov_kod_pover_A_NUSL := currTrans.NUSL;
 
   // находим длину правого торца
   for i := 0 to OutsideSurfaces.Count - 1 do

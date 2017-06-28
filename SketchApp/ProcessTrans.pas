@@ -32,6 +32,8 @@ type
 
     procedure CutTorec;
 
+    procedure CutCylinder;
+
     procedure MakeInnerOpenCylinder;
 
     procedure MakeInnerHalfOpenCylinder;
@@ -127,13 +129,14 @@ end;
 procedure TProcessingTransition.ProcessingTransition(i_transition: integer);
 var
   str: string;
-
-  x, y, w: integer;
-
-  MaxWidth: integer;
 begin
-  // currOrJoin := false;
+  // номер обрабатываемо перехода.
+  // Когда skipTrans>0, тогда пропускаем соответствующее количество переходов
   i_trans := i_transition + skipTrans;
+
+  // очищаем данные о предыдущих переходах.
+  m_InputData.ClearPrevTransitions;
+
   if ((i_trans) < (m_InputData.countTransitions)) then
   begin
 
@@ -141,7 +144,7 @@ begin
     while MainForm.ValueListEditor1.Strings.Count > 0 do
       MainForm.ValueListEditor1.DeleteRow(1);
 
-    // Читаем данные текущего перехода
+    // Читаем данные текущего перехода в  переменную currTrans
     m_InputData.ReadCurrentTransition(m_InputData.currTrans, i_trans);
 
     // Если точим левый или правый торец
@@ -152,18 +155,18 @@ begin
     begin
       // если в переходах первый переход - "точить"
       if ((m_InputData.currTrans.PKDA = 2112) or
-        (m_InputData.currTrans.PKDA = 3212) or
-        (m_InputData.currTrans.PKDA = 2111)) then
+        (m_InputData.currTrans.PKDA = 3212)) then
+        // и новый цилиндр - не закрытый
         if not(IsClosed(m_InputData.currTrans.NPVA)) then
           MakeOutsideHalfOpenCylinder;
-      // если в переходах первый переход - "точить"
+      // если в переходах первый переход - "подрезать"
       if (m_InputData.currTrans.PKDA = 2132) then
+        // и новый цилиндр - не закрытый
         if not(IsClosed(m_InputData.currTrans.R_POVV)) then
           MakeOutsideHalfOpenCylinder;
     end;
-    // или закрытый
-    if (m_InputData.currTrans.PKDA = 2112) or (m_InputData.currTrans.PKDA = 2111)
-    then
+    // или закрытый  цилиндр
+    if (m_InputData.currTrans.PKDA = 2112) then
       if (IsClosed(m_InputData.currTrans.NPVA)) then
         MakeOutsideClosedCylinder;
 
@@ -181,10 +184,15 @@ begin
 end;
 
 // Подрезать торец
+procedure TProcessingTransition.CutCylinder;
+begin
+  MainForm.m_sketchView.Resize_Cylinder(m_InputData.currTrans);
+  FillList(m_InputData.currTrans);
+end;
+
 procedure TProcessingTransition.CutTorec;
 begin
-  MainForm.m_sketchView.Resize_Torec(m_InputData.currTrans.SizesFromTP[2],
-    m_InputData.currTrans.NUSL);
+  MainForm.m_sketchView.Resize_Torec(m_InputData.currTrans);
   FillList(m_InputData.currTrans);
 end;
 
