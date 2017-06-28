@@ -51,6 +51,8 @@ type
     NUSL: integer;
     // Ќомер поверхности прив€зки
     PRIV: integer;
+    // Par1, Par2, Par3
+    Sizes: array [0 .. 2] of single;
   end;
 
   // класс отвечает за чтение данных из базы и за их хранение
@@ -66,11 +68,12 @@ type
     currTrans: ptrTrans;
     // объект, хран€щий информацию о переходе, св€занном с текущим
     joinTrans: ptrTrans;
+    // второй переход, св€занный с текущим (дл€ закрытых цилиндров)
+    joinTrans2: ptrTrans;
 
     // list дл€ хранени€ информации о поверхност€х
     listSurface: TList;
 
-  private
     // list дл€ хранени€ информации о переходах
     listTrans: TList;
 
@@ -84,14 +87,13 @@ type
     // „тение информации о текущем переходе
     procedure ReadCurrentTransition(var currentTransition: ptrTrans;
       i_trans: integer);
+    // очищаем переходы предыдущей детали
+    procedure ClearPrevTransitions;
 
   private
-
     // дописываем параметры поверхности, прив€занной к переходу
     function GetSurfParam(detal: integer; id: integer): paramSurfArray;
 
-    // очищаем переходы предыдущей детали
-    procedure ClearPrevTransitions;
   end;
 
 implementation
@@ -110,6 +112,8 @@ begin
   new(currTrans);
   joinTrans := nil;
   new(joinTrans);
+  joinTrans2 := nil;
+  new(joinTrans2);
 
 end;
 
@@ -160,17 +164,11 @@ var
 begin
 
   currentTransition.NPVA := ptrTrans(listTrans[i_trans]).NPVA;
-
   currentTransition.L_POVB := ptrTrans(listTrans[i_trans]).L_POVB;
-
   currentTransition.R_POVV := ptrTrans(listTrans[i_trans]).R_POVV;
-
   currentTransition.PKDA := ptrTrans(listTrans[i_trans]).PKDA;
-
   currentTransition.NUSL := ptrTrans(listTrans[i_trans]).NUSL;
-
   currentTransition.PRIV := ptrTrans(listTrans[i_trans]).PRIV;
-
   currentTransition.PerexUserText := ptrTrans(listTrans[i_trans]).PerexUserText;
 
   for i := 0 to 2 do
@@ -181,13 +179,12 @@ end;
 
 procedure TInputData.ClearPrevTransitions;
 begin
-  listTrans.Clear;
-  listSurface.Clear;
-  countTransitions := 0;
   currTrans := nil;
   new(currTrans);
   joinTrans := nil;
   new(joinTrans);
+  joinTrans2 := nil;
+  new(joinTrans2);
 end;
 
 procedure TInputData.ReadSQLDataTransitions(detal: integer);
@@ -263,6 +260,9 @@ begin
     surfase.PKDA := tempDataSet.Fields[3].AsInteger;
     surfase.NUSL := tempDataSet.Fields[4].AsInteger;
     surfase.PRIV := tempDataSet.Fields[5].AsInteger;
+    surfase.Sizes[0] := tempDataSet.Fields[6].AsInteger;
+    surfase.Sizes[1] := tempDataSet.Fields[7].AsInteger;
+    surfase.Sizes[2] := tempDataSet.Fields[8].AsInteger;
 
     listSurface.Add(surfase);
     tempDataSet.Next;
