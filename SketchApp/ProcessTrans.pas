@@ -147,28 +147,40 @@ begin
     // Читаем данные текущего перехода в  переменную currTrans
     m_InputData.ReadCurrentTransition(m_InputData.currTrans, i_trans);
 
-    // Если точим левый или правый торец
+    // Если подрезаем левый или правый торец
     if (m_InputData.currTrans.PKDA = 2131) then
       CutTorec;
 
+    // Если точим максимальный цилиндр
+    if (m_InputData.currTrans.PKDA = 2111) then
+      CutCylinder;
+
+    // Если точим полуоткрытый цилиндр
+    if (m_InputData.currTrans.PKDA = 2111) then
+      CutCylinder;
+
     // проверяем, что делаем: полуоткрытый цилиндр
     begin
-      // если в переходах первый переход - "точить"
-      if ((m_InputData.currTrans.PKDA = 2112) or
-        (m_InputData.currTrans.PKDA = 3212)) then
-        // и новый цилиндр - не закрытый
-        if not(IsClosed(m_InputData.currTrans.NPVA)) then
-          MakeOutsideHalfOpenCylinder;
-      // если в переходах первый переход - "подрезать"
-      if (m_InputData.currTrans.PKDA = 2132) then
-        // и новый цилиндр - не закрытый
-        if not(IsClosed(m_InputData.currTrans.R_POVV)) then
-          MakeOutsideHalfOpenCylinder;
+
+      begin
+        // если в переходах первый переход - "точить"
+        if ((m_InputData.currTrans.PKDA = 2112) or
+          (m_InputData.currTrans.PKDA = 3212)) then
+          // и новый цилиндр - не закрытый
+          if not(IsClosed(m_InputData.currTrans.NPVA)) then
+            MakeOutsideHalfOpenCylinder;
+        // если в переходах первый переход - "подрезать"
+        if (m_InputData.currTrans.PKDA = 2132) then
+          // и новый цилиндр - не закрытый
+          if not(IsClosed(m_InputData.currTrans.R_POVV)) then
+            MakeOutsideHalfOpenCylinder;
+      end;
+
+      // или закрытый  цилиндр
+      if (m_InputData.currTrans.PKDA = 2112) then
+        if (IsClosed(m_InputData.currTrans.NPVA)) then
+          MakeOutsideClosedCylinder;
     end;
-    // или закрытый  цилиндр
-    if (m_InputData.currTrans.PKDA = 2112) then
-      if (IsClosed(m_InputData.currTrans.NPVA)) then
-        MakeOutsideClosedCylinder;
 
     // Если делаем вырезы
     str := IntToStr(m_InputData.currTrans.PKDA);
@@ -179,8 +191,8 @@ begin
         // делаем внутренний полуоткрытый цилиндр
       else if (str[str.length] = '2') then
         MakeInnerHalfOpenCylinder;
-  end;
 
+  end;
 end;
 
 // Подрезать торец
