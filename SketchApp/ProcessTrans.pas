@@ -6,7 +6,7 @@ uses SysUtils, Dialogs, Classes, InputData, Generics.Collections, SketchView;
 
 type
 
-  paramSurfSizes = array [0 .. 2] of single;
+  paramSurfSizes = array [0 .. 3] of single;
 
   // указатель на запись
   ptrTransition = InputData.ptrTrans;
@@ -24,6 +24,7 @@ type
     // Проход всех переходов для построения эскизов каждого из них
     procedure ProcessingTransition(i_transition: integer);
 
+    function GetSurfSize(NPVA: integer): paramSurfSizes;
   private
 
     procedure MakeOutsideHalfOpenCylinder;
@@ -48,8 +49,6 @@ type
 
     // Заполенение ValueListEditor1  информацией о текущем переходе
     procedure FillList(trans: ptrTransition);
-
-    function GetSurfSize(NPVA: integer): paramSurfSizes;
 
   public
     // Объект хранящий входные данные (информация о переходе)
@@ -246,7 +245,7 @@ var
   i: integer;
   mass: paramSurfSizes;
 begin
-  for i := 0 to 2 do
+  for i := 0 to 3 do
     mass[i] := 0;
 
   // находим размеры поверхности
@@ -256,6 +255,7 @@ begin
       mass[0] := pSurf(m_InputData.listSurface[i]).Sizes[0];
       mass[1] := pSurf(m_InputData.listSurface[i]).Sizes[1];
       mass[2] := pSurf(m_InputData.listSurface[i]).Sizes[2];
+      mass[3] := pSurf(m_InputData.listSurface[i]).PRIV;
     end;
 
   result := mass;
@@ -344,8 +344,8 @@ var
   flagLeft: boolean;
   tochitPover, podrezTorec: single;
   nomerPovTorec: integer;
-  nomerPriv: integer;
-
+  // номера привязочных поверхностей
+  numPrivLeft, numPrivRight: integer;
   leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec, diamHalfopenedCyl,
     lengthHalfopenedCyl: single;
 begin
@@ -368,16 +368,21 @@ begin
   begin
     leftTor := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
     rightTorec := m_InputData.joinTrans.SizesFromTP[2];
+    numPrivLeft := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
+    numPrivRight := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
   end
+
   else if not(flagLeft) then
   begin
     leftTor := m_InputData.joinTrans.SizesFromTP[2];
     rightTorec := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
+    numPrivLeft := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
+    numPrivRight := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
   end;
 
   MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
-    flagLeft, leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
-    diamHalfopenedCyl, lengthHalfopenedCyl);
+    flagLeft, numPrivLeft, numPrivRight, leftTor, diamClosedCyl,
+    lengthClosedCylindr, rightTorec, diamHalfopenedCyl, lengthHalfopenedCyl);
 
   FillList(m_InputData.currTrans);
   FillList(m_InputData.joinTrans);
