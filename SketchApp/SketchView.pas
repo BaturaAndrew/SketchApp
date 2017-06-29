@@ -228,7 +228,11 @@ begin
   Id := GetOutsideSurfPriv(diamClosedCyl, flagLeft);
   nomerPov := currTrans.NPVA;
 
+<<<<<<< .merge_file_a03540
   // находим длину правого торца  и координату X левого торца
+=======
+  // находим длину правого торца
+>>>>>>> .merge_file_a05760
   for i := 0 to OutsideSurfaces.Count - 1 do
   begin
     if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
@@ -274,7 +278,11 @@ begin
     // Вставляем закрытый цилиндр
     begin
       if (numPrivLeft <> 1) then
+<<<<<<< .merge_file_a03540
         X1 := round(lengthDet - leftTor)
+=======
+        X1 := round(pSurf(OutsideSurfaces[Id + 2]).point[1].X - leftTor)
+>>>>>>> .merge_file_a05760
       else
         X1 := round(leftTor);
 
@@ -330,8 +338,17 @@ begin
       else
         X1 := round(leftTor + lengthClosedCylindr);
 
+<<<<<<< .merge_file_a03540
       if (flagPodrezLevTorec) then
         X1 := X1 + round(razmLeftPodrez);
+=======
+      if (numPrivRight <> 1) then
+      begin
+        // X2 := round(pSurf(OutsideSurfaces[Id]).point[0].X + podrezTorec);
+      end
+      else
+      begin
+>>>>>>> .merge_file_a05760
 
       X2 := round(lengthDet);
 
@@ -399,6 +416,16 @@ begin
         X2 := round(leftTor);
         X1 := round(rightTorec);
       end;
+      if (flagPodrezLevTorec) then
+      begin
+        X2 := round(X2 + razmLeftPodrez);
+        X1 := round(X1 + razmLeftPodrez);
+      end
+      else
+      begin
+        X2 := X2;
+        X1 := X1;
+      end;
 
       if (flagPodrezLevTorec) then
       begin
@@ -449,6 +476,7 @@ begin
         X2 := round(lengthDet - leftTor)
       end
       else
+<<<<<<< .merge_file_a03540
       begin
         X2 := round(leftTor);
       end;
@@ -461,6 +489,20 @@ begin
         X1 := round(X1 + razmLeftPodrez);
       end;
 
+=======
+      begin
+        X2 := round(leftTor);
+      end;
+
+      if (flagPodrezLevTorec) then
+      begin
+        X2 := round(X2 + razmLeftPodrez);
+      end
+      else
+        X2 := X2;
+
+      X1 := round(leftTorDet);
+>>>>>>> .merge_file_a05760
       // изменяем размеры правого торца
       for i := 0 to OutsideSurfaces.Count - 1 do
       begin
