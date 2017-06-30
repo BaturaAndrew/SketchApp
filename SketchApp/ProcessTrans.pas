@@ -50,6 +50,8 @@ type
     // Заполенение ValueListEditor1  информацией о текущем переходе
     procedure FillList(trans: ptrTransition);
 
+    // Вычисление размера подрезки
+    function CalculatedSizePodrez(nomerSurf: integer): single;
   public
     // Объект хранящий входные данные (информация о переходе)
     m_InputData: TInputData;
@@ -68,6 +70,35 @@ implementation
 
 uses
   SketchForm;
+
+function TProcessingTransition.CalculatedSizePodrez(nomerSurf: integer): single;
+var
+  i: integer;
+  size: single;
+  NPVA: integer;
+begin
+  size := 0;
+  NPVA := nomerSurf;
+
+  while GetSurfSize(NPVA)[3] <> 1 do
+  begin
+    if (NPVA > GetSurfSize(NPVA)[3]) then
+      size := size + GetSurfSize(NPVA)[0]
+    else
+      size := size - GetSurfSize(NPVA)[0];
+
+    NPVA := round(GetSurfSize(NPVA)[3]);
+  end;
+
+  if (NPVA > GetSurfSize(NPVA)[3]) then
+    size := size + GetSurfSize(NPVA)[0]
+  else
+    size := size - GetSurfSize(NPVA)[0];
+
+  NPVA := round(GetSurfSize(NPVA)[3]);
+
+  result := size;
+end;
 
 constructor TProcessingTransition.Create;
 begin
@@ -256,6 +287,7 @@ begin
       mass[1] := pSurf(m_InputData.listSurface[i]).Sizes[1];
       mass[2] := pSurf(m_InputData.listSurface[i]).Sizes[2];
       mass[3] := pSurf(m_InputData.listSurface[i]).PRIV;
+      break;
     end;
 
   result := mass;
@@ -366,16 +398,21 @@ begin
   // устанавливаем размеры для торцев в зависимости от расположения относительно максимального диаметра
   if flagLeft then
   begin
-    leftTor := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
-    rightTorec := m_InputData.joinTrans.SizesFromTP[2];
+    // leftTor := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
+    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+  //  rightTorec := m_InputData.joinTrans.SizesFromTP[2];
+    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
     numPrivLeft := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
     numPrivRight := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
   end
 
   else if not(flagLeft) then
   begin
-    leftTor := m_InputData.joinTrans.SizesFromTP[2];
-    rightTorec := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
+    // leftTor := m_InputData.joinTrans.SizesFromTP[2];
+    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+   // rightTorec := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
+    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
     numPrivLeft := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
     numPrivRight := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
   end;

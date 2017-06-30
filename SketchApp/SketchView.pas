@@ -111,7 +111,6 @@ begin
     Result := 0
 end;
 
-// Конструктор
 procedure TSketchView.Clear;
 var
   i: integer;
@@ -228,11 +227,7 @@ begin
   Id := GetOutsideSurfPriv(diamClosedCyl, flagLeft);
   nomerPov := currTrans.NPVA;
 
-<<<<<<< .merge_file_a03540
-  // находим длину правого торца  и координату X левого торца
-=======
-  // находим длину правого торца
->>>>>>> .merge_file_a05760
+  // находим размер привязки  и координату X левого торца
   for i := 0 to OutsideSurfaces.Count - 1 do
   begin
     if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
@@ -247,122 +242,80 @@ begin
 
     // Вставляем левый полуоткрытый торец
     begin
-      // Когда размер привязки не равен 1(не привязан к левому торцу)
-      if (numPrivLeft <> 1) then
-      begin
-        X1 := round(lengthDet - leftTor);
-        X2 := X1;
-      end
-      else
-      begin
-        X1 := round(leftTor);
-        X2 := X1;
-      end;
-
-      if (flagPodrezLevTorec) then
-      begin
-        X1 := X1 + round(razmLeftPodrez);
-        X2 := X1;
-      end;
-
+      X1 := round(leftTor);
+      X2 := X1;
       Y2 := round(pSurf(OutsideSurfaces[Id]).point[1].Y);
       Y1 := round(diamClosedCyl);
       Kod_PKDA := 2132;
       Kod_NUSL := 9905;
       Index := Id + 1;
-      InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+      number := nomerPov - 1;
+
+      if (flagPodrezLevTorec) then
+      begin
+        X1 := X1 + round(razmLeftPodrez);
+        X2 := X1;
+      end;
+      InsertSurf(true, X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL);
       // И изменяем размеры цилиндра, который перед вставленным торцем
       pSurf(OutsideSurfaces[Id]).point[1].X := X1;
     end;
-    //
+
     // Вставляем закрытый цилиндр
     begin
-      if (numPrivLeft <> 1) then
-<<<<<<< .merge_file_a03540
-        X1 := round(lengthDet - leftTor)
-=======
-        X1 := round(pSurf(OutsideSurfaces[Id + 2]).point[1].X - leftTor)
->>>>>>> .merge_file_a05760
-      else
-        X1 := round(leftTor);
-
+      X1 := round(leftTor);
       X2 := round(leftTor + lengthClosedCylindr);
-
+      Y1 := round(diamClosedCyl);
+      Y2 := round(diamClosedCyl);
+      Kod_PKDA := 2112;
+      Kod_NUSL := 9906;
+      Index := Id + 2;
       if (flagPodrezLevTorec) then
       begin
         X1 := X1 + round(razmLeftPodrez);
         X2 := X2 + round(razmLeftPodrez);
       end;
-
-      Y1 := round(diamClosedCyl);
-      Y2 := round(diamClosedCyl);
-      Kod_PKDA := 2112;
-      number := nomerPov + 1;
-      Kod_NUSL := 9906;
-      Index := Id + 2;
-      InsertSurf(true, X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL);
+      InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
     end;
 
     // Вставляем правый полуоткрытый торец
     begin
-      if (numPrivRight <> 1) then
-      begin
-        X1 := round(lengthDet - (leftTor + lengthClosedCylindr));
-        X2 := X1;
-      end
-      else
-      begin
-        X1 := round(leftTor + lengthClosedCylindr);
-        X2 := X1;
-      end;
+      X1 := round(leftTor + lengthClosedCylindr);
+      X2 := X1;
+      Y1 := round(diamClosedCyl);
+      Y2 := round(diamHalfopenedCyl);
+      number := nomerPov + 1;
+      Kod_PKDA := 2132;
+      Kod_NUSL := 9903;
       // Если подрезали левый торец
       if (flagPodrezLevTorec) then
       begin
         X1 := X1 + round(razmLeftPodrez);
         X2 := X1;
       end;
-      Y1 := round(diamClosedCyl);
-      Y2 := round(diamHalfopenedCyl);
-      number := nomerPov - 1;
-      Kod_PKDA := 2132;
-      Kod_NUSL := 9903;
-
       InsertSurf(true, X1, X2, Y1, Y2, Id, number, Kod_PKDA, Kod_NUSL);
     end;
 
     // Вставляем правый полуоткрытый цилиндр
     begin
 
-      if (numPrivRight <> 1) then
-        X1 := round(lengthDet - (leftTor + lengthClosedCylindr))
-      else
-        X1 := round(leftTor + lengthClosedCylindr);
+      X1 := round(leftTor + lengthClosedCylindr);
+      X2 := round(lengthDet);
+      Y1 := round(diamHalfopenedCyl);
+      Y2 := round(diamHalfopenedCyl);
+      Kod_PKDA := 2112;
+      Kod_NUSL := 9902;
+      number := nomerPov + 2;
+      Index := Id + 1;
 
-<<<<<<< .merge_file_a03540
       if (flagPodrezLevTorec) then
         X1 := X1 + round(razmLeftPodrez);
-=======
-      if (numPrivRight <> 1) then
-      begin
-        // X2 := round(pSurf(OutsideSurfaces[Id]).point[0].X + podrezTorec);
-      end
-      else
-      begin
->>>>>>> .merge_file_a05760
-
-      X2 := round(lengthDet);
+      InsertSurf(true, X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL);
 
       // изменяем размеры правого торца
       for i := 0 to OutsideSurfaces.Count - 1 do
         if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
           pSurf(OutsideSurfaces[i]).point[0].Y := round(diamHalfopenedCyl);
-
-      Y1 := round(diamHalfopenedCyl);
-      Y2 := round(diamHalfopenedCyl);
-      Kod_PKDA := 2112;
-      Kod_NUSL := 9902;
-      Index := Id + 1;
-      InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
     end;
 
   end
@@ -371,30 +324,19 @@ begin
 
     // Вставляем правый полуоткрытый торец
     begin
-      // Когда размер привязки не равен 1(не привязан к левому торцу)
-      if (numPrivRight <> 1) then
-      begin
-        X1 := round(lengthDet - rightTorec);
-        X2 := X1;
-      end
-      else
-      begin
-        X1 := round(rightTorec);
-        X2 := X1;
-      end;
+      X1 := round(rightTorec);
+      X2 := X1;
       Y2 := round(pSurf(OutsideSurfaces[Id]).point[1].Y);
       Y1 := round(diamClosedCyl);
-
+      Kod_PKDA := 2132;
+      Kod_NUSL := 9905;
+      Index := Id + 1;
       // Если подрезали левый торец
       if (flagPodrezLevTorec) then
       begin
         X1 := X1 + round(razmLeftPodrez);
         X2 := X1;
       end;
-
-      Kod_PKDA := 2132;
-      Kod_NUSL := 9905;
-      Index := Id + 1;
       InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
       // И изменяем размеры цилиндра, который перед вставленным торцем
       pSurf(OutsideSurfaces[Id]).point[0].X := X1;
@@ -402,56 +344,32 @@ begin
     //
     // Вставляем закрытый цилиндр
     begin
-
       Y1 := round(diamClosedCyl);
-      Y2 := round(diamClosedCyl);
-
-      if (numPrivRight <> 1) then
-      begin
-        X2 := round(lengthDet - leftTor);
-        X1 := round(lengthDet - rightTorec);
-      end
-      else
-      begin
-        X2 := round(leftTor);
-        X1 := round(rightTorec);
-      end;
-      if (flagPodrezLevTorec) then
-      begin
-        X2 := round(X2 + razmLeftPodrez);
-        X1 := round(X1 + razmLeftPodrez);
-      end
-      else
-      begin
-        X2 := X2;
-        X1 := X1;
-      end;
-
-      if (flagPodrezLevTorec) then
-      begin
-        X2 := round(X2 + razmLeftPodrez);
-        X1 := round(X1 + razmLeftPodrez);
-      end;
-
+      Y2 := Y1;
+      X2 := round(leftTor);
+      X1 := round(rightTorec);
       Kod_PKDA := 2112;
       number := nomerPov + 1;
       Kod_NUSL := 9906;
       Index := Id + 2;
+      if (flagPodrezLevTorec) then
+      begin
+        X2 := round(X2 + razmLeftPodrez);
+        X1 := round(X1 + razmLeftPodrez);
+      end;
       InsertSurf(true, X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL);
     end;
 
     // Вставляем левый полуоткрытый торец
     begin
-      if (numPrivLeft <> 1) then
-      begin
-        X1 := round(lengthDet - leftTor);
-        X2 := X1;
-      end
-      else
-      begin
-        X1 := round(leftTor);
-        X2 := X1;
-      end;
+      X1 := round(leftTor);
+      X2 := X1;
+      Y1 := round(diamClosedCyl);
+      Y2 := round(diamHalfopenedCyl);
+      number := nomerPov - 1;
+      Kod_PKDA := 2132;
+      Kod_NUSL := 9903;
+
       // Если подрезали левый торец
       if (flagPodrezLevTorec) then
       begin
@@ -459,66 +377,28 @@ begin
         X2 := X1;
         // pSurf(OutsideSurfaces[Id + 2]).point[1].X := X1;
       end;
-      Y1 := round(diamClosedCyl);
-      Y2 := round(diamHalfopenedCyl);
-      number := nomerPov - 1;
-      Kod_PKDA := 2132;
-      Kod_NUSL := 9903;
-
       InsertSurf(true, X1, X2, Y1, Y2, Id, number, Kod_PKDA, Kod_NUSL);
     end;
 
     // Вставляем левый полуоткрытый цилиндр
     begin
-
-      if (numPrivLeft <> 1) then
-      begin
-        X2 := round(lengthDet - leftTor)
-      end
-      else
-<<<<<<< .merge_file_a03540
-      begin
-        X2 := round(leftTor);
-      end;
-
+      X2 := round(leftTor);
       X1 := round(leftTorDet);
-
-      if (flagPodrezLevTorec) then
-      begin
-        X2 := round(X2 + razmLeftPodrez);
-        X1 := round(X1 + razmLeftPodrez);
-      end;
-
-=======
-      begin
-        X2 := round(leftTor);
-      end;
-
-      if (flagPodrezLevTorec) then
-      begin
-        X2 := round(X2 + razmLeftPodrez);
-      end
-      else
-        X2 := X2;
-
-      X1 := round(leftTorDet);
->>>>>>> .merge_file_a05760
-      // изменяем размеры правого торца
-      for i := 0 to OutsideSurfaces.Count - 1 do
-      begin
-        if (pSurf(OutsideSurfaces[i]).NUSL = 9901) then
-        begin
-
-          pSurf(OutsideSurfaces[i]).point[1].Y := round(diamHalfopenedCyl);;
-        end;
-      end;
-
       Y1 := round(diamHalfopenedCyl);
       Y2 := round(diamHalfopenedCyl);
       Kod_PKDA := 2112;
       Kod_NUSL := 9902;
       Index := Id + 1;
+      if (flagPodrezLevTorec) then
+      begin
+        X2 := round(X2 + razmLeftPodrez);
+        X1 := round(X1 + razmLeftPodrez);
+      end;
       InsertSurf(true, X1, X2, Y1, Y2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+      // изменяем размеры левого торца
+      for i := 0 to OutsideSurfaces.Count - 1 do
+        if (pSurf(OutsideSurfaces[i]).NUSL = 9901) then
+          pSurf(OutsideSurfaces[i]).point[1].Y := round(diamHalfopenedCyl);
     end;
   end;
 
