@@ -401,6 +401,7 @@ begin
   // устанавливаем размеры для торцев в зависимости от расположения относительно максимального диаметра
   if flagLeft then
   begin
+<<<<<<< HEAD
     leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
     rightTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
   end
@@ -408,11 +409,26 @@ begin
   begin
     leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
     rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+=======
+    numPrivLeft := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
+    numPrivRight := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
+    leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+    rightTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+
+  end
+  else if not(flagLeft) then
+  begin
+    numPrivLeft := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
+    numPrivRight := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
+    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+
+>>>>>>> f16bae829cd7065588916efdeebafb62e4105265
   end;
 
   MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
-    flagLeft, leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
-    diamHalfopenedCyl, lengthHalfopenedCyl);
+    flagLeft, numPrivLeft, numPrivRight, leftTor, diamClosedCyl,
+    lengthClosedCylindr, rightTorec, diamHalfopenedCyl, lengthHalfopenedCyl);
 
   FillList(m_InputData.currTrans);
   FillList(m_InputData.joinTrans);
@@ -454,6 +470,16 @@ begin
     (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
   begin
 
+<<<<<<< HEAD
+=======
+    // // Отыскиваем, от какой поверхности привязываемся(для размера "подрезать торец на.." )
+    // // берем PRIV из поверхности POVV текущей поверхности
+    // for i := 0 to m_InputData.listSurface.Count - 1 do
+    // if (m_InputData.currTrans.R_POVV = pSurf(m_InputData.listSurface[i])
+    // .number) then
+    // nomerPriv := pSurf(m_InputData.listSurface[i]).PRIV;
+
+>>>>>>> f16bae829cd7065588916efdeebafb62e4105265
     podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.R_POVV);
     tochitPover := m_InputData.currTrans.SizesFromTP[0];
 
