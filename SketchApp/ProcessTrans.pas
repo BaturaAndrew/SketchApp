@@ -80,6 +80,7 @@ begin
   size := 0;
   NPVA := nomerSurf;
 
+  // GetSurfSize(NPVA)[3]; [3] - PRIV
   while GetSurfSize(NPVA)[3] <> 1 do
   begin
     if (NPVA > GetSurfSize(NPVA)[3]) then
@@ -398,23 +399,19 @@ begin
   // устанавливаем размеры для торцев в зависимости от расположения относительно максимального диаметра
   if flagLeft then
   begin
-    // leftTor := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
-    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
-  //  rightTorec := m_InputData.joinTrans.SizesFromTP[2];
-    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
-    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
     numPrivLeft := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
     numPrivRight := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
-  end
+    leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+    rightTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
 
+  end
   else if not(flagLeft) then
   begin
-    // leftTor := m_InputData.joinTrans.SizesFromTP[2];
-    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
-   // rightTorec := GetSurfSize(m_InputData.joinTrans2.R_POVV)[0];
-    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
     numPrivLeft := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
     numPrivRight := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
+    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+
   end;
 
   MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
@@ -461,15 +458,18 @@ begin
     (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
   begin
 
-    // Отыскиваем, от какой поверхности привязываемся(для размера "подрезать торец на.." )
-    // берем PRIV из поверхности POVV текущей поверхности
-    for i := 0 to m_InputData.listSurface.Count - 1 do
-      if (m_InputData.currTrans.R_POVV = pSurf(m_InputData.listSurface[i])
-        .number) then
-        nomerPriv := pSurf(m_InputData.listSurface[i]).PRIV;
+    // // Отыскиваем, от какой поверхности привязываемся(для размера "подрезать торец на.." )
+    // // берем PRIV из поверхности POVV текущей поверхности
+    // for i := 0 to m_InputData.listSurface.Count - 1 do
+    // if (m_InputData.currTrans.R_POVV = pSurf(m_InputData.listSurface[i])
+    // .number) then
+    // nomerPriv := pSurf(m_InputData.listSurface[i]).PRIV;
+
+    podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.R_POVV);
+    tochitPover := m_InputData.currTrans.SizesFromTP[0];
 
     MainForm.m_sketchView.Insert_OutsideHalfopenSurfaces(m_InputData.currTrans,
-      flagLeft, nomerPriv);
+      flagLeft, nomerPriv, podrezTorec, tochitPover);
 
     FillList(m_InputData.currTrans);
   end
@@ -482,7 +482,7 @@ begin
     if (m_InputData.currTrans.PKDA = 2132) then
     begin
       // новая длина детали
-      podrezTorec := m_InputData.currTrans.SizesFromTP[2];
+      podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.NPVA);
       // на сколько подрезаем цилиндр
       tochitPover := m_InputData.joinTrans.SizesFromTP[0];
       // номер поверхности нового торца
@@ -490,7 +490,7 @@ begin
 
       // вставляем поверхности
       MainForm.m_sketchView.Insert_OutsideHalfopenSurfaces
-        (m_InputData.currTrans, flagLeft, 0, nomerPovTorec, podrezTorec,
+        (m_InputData.currTrans, flagLeft, nomerPovTorec, podrezTorec,
         tochitPover);
 
       // если делая выемку обрабатываем сразу 2 перехода, то один переход пропускаем
@@ -500,12 +500,12 @@ begin
     // Рассматриваем второй переход из пары
     if (m_InputData.joinTrans.PKDA = 2132) then
     begin
-      podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
+      podrezTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
       tochitPover := m_InputData.currTrans.SizesFromTP[0];
       nomerPovTorec := m_InputData.joinTrans.NPVA;
 
       MainForm.m_sketchView.Insert_OutsideHalfopenSurfaces
-        (m_InputData.joinTrans, flagLeft, 0, nomerPovTorec, podrezTorec,
+        (m_InputData.joinTrans, flagLeft, nomerPovTorec, podrezTorec,
         tochitPover);
 
       skipTrans := skipTrans + 1;
