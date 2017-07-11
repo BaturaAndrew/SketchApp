@@ -113,7 +113,8 @@ function TProcessingTransition.PositionCut: boolean;
 begin
 
   // когда выемку делаем за один переход "точить поверхность, выдерживая ..."
-  if ((m_InputData.currTrans.PKDA = 2112) and
+  if (((m_InputData.currTrans.PKDA = 2112) or
+    (m_InputData.currTrans.PKDA = 3212)) and
     (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
   begin
     if ((m_InputData.currTrans.R_POVV > m_InputData.currTrans.L_POVB)) then
@@ -145,6 +146,7 @@ begin
         result := false
       else // иначе - слева
         result := true;
+
     // Рассматриваем второй переход из пары "точить поверхность - подрезать торец"
     if ((m_InputData.joinTrans.PKDA = 2132) or
       (m_InputData.joinTrans.PKDA = -2132)) then
@@ -399,6 +401,7 @@ begin
   // устанавливаем размеры для торцев в зависимости от расположения относительно максимального диаметра
   if flagLeft then
   begin
+<<<<<<< HEAD
     numPrivLeft := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
     numPrivRight := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
     leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
@@ -412,6 +415,15 @@ begin
     leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
     rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
 
+=======
+    leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+    rightTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+  end
+  else if not(flagLeft) then
+  begin
+    leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+>>>>>>> f153781d92d17c696446f9ebeb3d5f50e16f4b46
   end;
 
   MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
@@ -458,6 +470,7 @@ begin
     (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
   begin
 
+<<<<<<< HEAD
     // // Отыскиваем, от какой поверхности привязываемся(для размера "подрезать торец на.." )
     // // берем PRIV из поверхности POVV текущей поверхности
     // for i := 0 to m_InputData.listSurface.Count - 1 do
@@ -465,6 +478,8 @@ begin
     // .number) then
     // nomerPriv := pSurf(m_InputData.listSurface[i]).PRIV;
 
+=======
+>>>>>>> f153781d92d17c696446f9ebeb3d5f50e16f4b46
     podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.R_POVV);
     tochitPover := m_InputData.currTrans.SizesFromTP[0];
 

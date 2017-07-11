@@ -8,7 +8,7 @@ uses
   // для отрисовки эскиза
   SketchView, Vcl.Grids, Vcl.ValEdit,
   // для обработки переходов и формировании эскизов
-  ProcessTrans, Vcl.Buttons;
+  ProcessTrans, InputData, Vcl.Buttons;
 
 type
   TEdit = class(StdCtrls.TEdit)
@@ -28,12 +28,14 @@ type
     Splitter1: TSplitter;
     ValueListEditor1: TValueListEditor;
     Panel1: TPanel;
+    BitBtn1: TBitBtn;
     procedure DrawButtonClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure PaintBox1Paint(Sender: TObject);
     procedure Kod_detalMouseMove(Sender: TObject; Shift: TShiftState;
       X, Y: Integer);
+    procedure BitBtn1Click(Sender: TObject);
 
   private
 
@@ -51,6 +53,27 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TMainForm.BitBtn1Click(Sender: TObject);
+var
+  f: System.Text;
+  i: Integer;
+begin
+
+  AssignFile(f, 'file.txt');
+  Rewrite(f);
+  for i := 0 to m_sketchView.OutsideSurfaces.Count - 1 do
+  begin
+    Writeln(f, (pSurf(m_sketchView.OutsideSurfaces[i]).number.ToString()));
+    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.OutsideSurfaces[i])
+      .PKDA.ToString()) + '   X1: ' + pSurf(m_sketchView.OutsideSurfaces[i])
+      .point[0].X.ToString() + ' Y1: ' + pSurf(m_sketchView.OutsideSurfaces[i])
+      .point[0].Y.ToString() + '   X2: ' + pSurf(m_sketchView.OutsideSurfaces[i]
+      ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.OutsideSurfaces[i])
+      .point[1].Y.ToString());
+  end;
+  CloseFile(f);
+end;
 
 procedure TMainForm.DrawButtonClick(Sender: TObject);
 var
