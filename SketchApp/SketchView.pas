@@ -624,7 +624,7 @@ begin
 
   if (nomerPov = 0) then
   begin
-    podrezTorec := currTrans.SizesFromTP[1];
+    podrezTorec :=  currTrans.SizesFromTP[1]+lengthDet ;
     tochitPover := currTrans.SizesFromTP[0];
     nomerPov := currTrans.NPVA;
   end;
@@ -655,7 +655,7 @@ begin
 
   if (not(flagLeft)) then // вставл€ем поверхности справа
   begin
-    podrezTorec := lengthDet - podrezTorec;
+    podrezTorec :=ABS( lengthDet - podrezTorec);
     // ¬ставл€ем правый внутренний полуоткрытый цилиндр
     begin
 
