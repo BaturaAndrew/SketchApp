@@ -573,7 +573,7 @@ begin
       // Вычисляем размер подрезки в зависимости от расположения относительно макс. диаметра
 
       // новая длина детали
-     //  podrezTorec := m_InputData.currTrans.SizesFromTP[2];
+      // podrezTorec := m_InputData.currTrans.SizesFromTP[2];
       podrezTorec := CalculatedInnerSizePodrez(m_InputData.currTrans.NPVA);
 
       // на сколько подрезаем цилиндр
@@ -592,7 +592,7 @@ begin
       if (m_InputData.joinTrans.PKDA = -2132) then
       begin
         podrezTorec := CalculatedInnerSizePodrez(m_InputData.joinTrans.NPVA);
-        // podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
+     //   podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
         tochitPover := m_InputData.currTrans.SizesFromTP[0];
         nomerPovTorec := m_InputData.joinTrans.NPVA;
 

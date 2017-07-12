@@ -60,6 +60,7 @@ type
 
   class var
     maxDiamZagot, lengthZagot: single;
+    maxDiamDetal, lengthDetal: single;
   public
     // количество переходов
     countTransitions: integer;
@@ -80,6 +81,8 @@ type
   public
     class function GetDiamZagot: single;
     class function GetLengthZagot: single;
+    class function GetDiamDetal: single;
+    class function GetLengthDetal: single;
     // конструктор
     constructor Create;
     // Чтение  данных о переходах соответствующей детали из базы SQL
@@ -125,6 +128,16 @@ end;
 class function TInputData.GetDiamZagot: single;
 begin
   Result := maxDiamZagot;
+end;
+
+class function TInputData.GetLengthDetal: single;
+begin
+  Result := Self.lengthDetal;
+end;
+
+class function TInputData.GetDiamDetal: single;
+begin
+  Result := maxDiamDetal;
 end;
 
 function TInputData.GetSurfParam(detal: integer; id: integer): paramSurfArray;
@@ -212,9 +225,15 @@ begin
   else
     maxDiamZagot := tempDataSet.Fields[1].AsInteger;
   if (tempDataSet.Fields[2].AsInteger > tempDataSet.Fields[3].AsInteger) then
-    lengthZagot := tempDataSet.Fields[2].AsInteger
+  begin
+    lengthZagot := tempDataSet.Fields[2].AsInteger;
+    lengthDetal := tempDataSet.Fields[3].AsInteger;
+  end
   else
+  begin
     lengthZagot := tempDataSet.Fields[3].AsInteger;
+    lengthDetal := tempDataSet.Fields[2].AsInteger;
+  end;
 
   // следующий Select с информацией о переходах
   tempDataSet.Recordset := DataModule1.ADOSpReadTransitions.NextRecordSet(i);
