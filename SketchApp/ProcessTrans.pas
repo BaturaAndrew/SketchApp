@@ -52,6 +52,8 @@ type
 
     // ¬ычисление размера подрезки
     function CalculatedSizePodrez(nomerSurf: integer): single;
+    // ¬ычисление размера подрезки
+    function CalculatedInnerSizePodrez(nomerSurf: integer): single;
   public
     // ќбъект хран€щий входные данные (информаци€ о переходе)
     m_InputData: TInputData;
@@ -70,6 +72,35 @@ implementation
 
 uses
   SketchForm;
+
+function TProcessingTransition.CalculatedInnerSizePodrez
+  (nomerSurf: integer): single;
+var
+  i: integer;
+  size: single;
+  NPVA: integer;
+begin
+  size := 0;
+  NPVA := nomerSurf;
+
+  // GetSurfSize(NPVA)[3]; [3] - PRIV
+  while GetSurfSize(NPVA)[3] <> 1 do
+  begin
+    if (NPVA > GetSurfSize(NPVA)[3]) then
+      size := size + GetSurfSize(NPVA)[0]
+    else
+      size := size - GetSurfSize(NPVA)[0];
+
+    NPVA := round(GetSurfSize(NPVA)[3]);
+  end;
+
+//  if (NPVA > GetSurfSize(NPVA)[3]) then
+//    size := size + GetSurfSize(NPVA)[0]
+//  else
+    size :=  GetSurfSize(NPVA)[0]- size;
+
+  result := size;
+end;
 
 function TProcessingTransition.CalculatedSizePodrez(nomerSurf: integer): single;
 var
@@ -96,7 +127,7 @@ begin
   else
     size := size - GetSurfSize(NPVA)[0];
 
-  NPVA := round(GetSurfSize(NPVA)[3]);
+  //NPVA := round(GetSurfSize(NPVA)[3]);
 
   result := size;
 end;
@@ -398,22 +429,23 @@ begin
   diamHalfopenedCyl := m_InputData.joinTrans2.SizesFromTP[0];
   lengthHalfopenedCyl := GetSurfSize(m_InputData.joinTrans2.NPVA)[1];
 
-  // устанавливаем размеры дл€ торцев в зависимости от расположени€ относительно максимального диаметра
+  // ¬ычисл€ем размеры дл€ торцев в зависимости от расположени€ относительно макс. диаметра
   if flagLeft then
   begin
 <<<<<<< HEAD
+<<<<<<< HEAD
     numPrivLeft := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
     numPrivRight := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
+=======
+>>>>>>> master
     leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
     rightTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
-
   end
   else if not(flagLeft) then
   begin
-    numPrivLeft := round(GetSurfSize(m_InputData.currTrans.R_POVV)[3]);
-    numPrivRight := round(GetSurfSize(m_InputData.currTrans.L_POVB)[3]);
     leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
     rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+<<<<<<< HEAD
 
 =======
     leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
@@ -424,6 +456,8 @@ begin
     leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
     rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
 >>>>>>> f153781d92d17c696446f9ebeb3d5f50e16f4b46
+=======
+>>>>>>> master
   end;
 
   MainForm.m_sketchView.Insert_OutsideClosedSurfaces(m_InputData.currTrans,
@@ -471,6 +505,7 @@ begin
   begin
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     // // ќтыскиваем, от какой поверхности прив€зываемс€(дл€ размера "подрезать торец на.." )
     // // берем PRIV из поверхности POVV текущей поверхности
     // for i := 0 to m_InputData.listSurface.Count - 1 do
@@ -480,6 +515,8 @@ begin
 
 =======
 >>>>>>> f153781d92d17c696446f9ebeb3d5f50e16f4b46
+=======
+>>>>>>> master
     podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.R_POVV);
     tochitPover := m_InputData.currTrans.SizesFromTP[0];
 
@@ -560,12 +597,17 @@ begin
 
     FillList(m_InputData.currTrans);
   end
-  else
+  else // ≈сли обрабатываем за 2 перехода
     // –ассматриваем первый переход из пары
     if (m_InputData.currTrans.PKDA = -2132) then
     begin
+
+      // ¬ычисл€ем размер подрезки в зависимости от расположени€ относительно макс. диаметра
+
       // нова€ длина детали
-      podrezTorec := m_InputData.currTrans.SizesFromTP[2];
+      // podrezTorec := m_InputData.currTrans.SizesFromTP[2];
+      podrezTorec := CalculatedInnerSizePodrez(m_InputData.currTrans.NPVA);
+
       // на сколько подрезаем цилиндр
       tochitPover := m_InputData.joinTrans.SizesFromTP[0];
       // номер поверхности нового торца
@@ -581,7 +623,8 @@ begin
       // –ассматриваем второй переход из пары
       if (m_InputData.joinTrans.PKDA = -2132) then
       begin
-        podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
+        podrezTorec := CalculatedInnerSizePodrez(m_InputData.joinTrans.NPVA);
+     //   podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
         tochitPover := m_InputData.currTrans.SizesFromTP[0];
         nomerPovTorec := m_InputData.joinTrans.NPVA;
 
@@ -608,7 +651,7 @@ begin
   diametr := m_InputData.currTrans.SizesFromTP[0];
   nomerPovTorec := m_InputData.currTrans.NPVA;
 
-  MainForm.m_sketchView.Insert_OpenInnerCylinder(m_InputData.currTrans,
+  MainForm.m_sketchView.Insert_InnerOpenCylinder(m_InputData.currTrans,
     nomerPovTorec, diametr);
 
   FillList(m_InputData.currTrans);

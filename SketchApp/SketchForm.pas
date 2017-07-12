@@ -59,9 +59,9 @@ var
   f: System.Text;
   i: Integer;
 begin
-
   AssignFile(f, 'file.txt');
   Rewrite(f);
+   Writeln(f, ' Наружние поверхности');
   for i := 0 to m_sketchView.OutsideSurfaces.Count - 1 do
   begin
     Writeln(f, (pSurf(m_sketchView.OutsideSurfaces[i]).number.ToString()));
@@ -72,6 +72,21 @@ begin
       ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.OutsideSurfaces[i])
       .point[1].Y.ToString());
   end;
+
+  Writeln(f, ' ');
+   Writeln(f, ' Внутренние поверхности');
+
+  for i := 0 to m_sketchView.InnerSurfaces.Count - 1 do
+  begin
+    Writeln(f, (pSurf(m_sketchView.InnerSurfaces[i]).number.ToString()));
+    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.InnerSurfaces[i])
+      .PKDA.ToString()) + '   X1: ' + pSurf(m_sketchView.InnerSurfaces[i])
+      .point[0].X.ToString() + ' Y1: ' + pSurf(m_sketchView.InnerSurfaces[i])
+      .point[0].Y.ToString() + '   X2: ' + pSurf(m_sketchView.InnerSurfaces[i]
+      ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.InnerSurfaces[i])
+      .point[1].Y.ToString());
+  end;
+
   CloseFile(f);
 end;
 
@@ -165,11 +180,7 @@ begin
     m_sketchView.Draw(PaintBox1.Canvas);
 end;
 
-
-
-
 // TEdit's metodes
-
 procedure TEdit.SetBorder(AColor: TColor);
 var
   Canvas: TCanvas;
