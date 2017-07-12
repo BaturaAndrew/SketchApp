@@ -279,7 +279,7 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-        // pSurf(OutsideSurfaces[i_existClosedCylinder - 1]).point[0] := P1;
+         pSurf(OutsideSurfaces[i_existClosedCylinder - 1]).point[0] := P1;
       end
       // если нет, то вставляем поверхность
       else
@@ -310,8 +310,8 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-        // pSurf(OutsideSurfaces[i_existClosedCylinder]).point[0] := P1;
-        // pSurf(OutsideSurfaces[i_existClosedCylinder]).point[1] := P2;
+         pSurf(OutsideSurfaces[i_existClosedCylinder]).point[0] := P1;
+         pSurf(OutsideSurfaces[i_existClosedCylinder]).point[1] := P2;
       end
       // если нет, то вставляем поверхность
       else
@@ -338,8 +338,8 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-        // pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[0] := P1;
-        // pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[1] := P2;
+         pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[0] := P1;
+         pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[1] := P2;
       end
       // если нет, то вставляем поверхность
       else
@@ -363,9 +363,9 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-        // pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[0].Y := P1.Y;
-        // pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[1].Y := P2.Y;
-        // pSurf(OutsideSurfaces[i_existClosedCylinder + 3]).point[0].Y := P2.Y;
+         pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[0].Y := P1.Y;
+         pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[1].Y := P2.Y;
+         pSurf(OutsideSurfaces[i_existClosedCylinder + 3]).point[0].Y := P2.Y;
       end
       // если нет, то вставляем поверхность
       else
@@ -384,7 +384,6 @@ begin
   end
   else
   begin
-
     // Вставляем правый полуоткрытый торец
     begin
       P1.X := round(rightTorec);
@@ -405,7 +404,7 @@ begin
       // И изменяем размеры цилиндра, который перед вставленным торцем
       pSurf(OutsideSurfaces[Id]).point[0].X := P1.X;
     end;
-    //
+
     // Вставляем закрытый цилиндр
     begin
       P1.X := round(rightTorec);
