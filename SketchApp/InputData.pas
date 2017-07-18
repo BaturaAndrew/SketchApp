@@ -158,7 +158,7 @@ begin
   DataModule1.ADOQuery.SQL.Add
     ('SELECT Nomer_Pover_L_POVB, Nomer_Pover_R_POVV, Kod_Pover_A_PKDA , ' +
     'Uslov_kod_pover_A_NUSL, Nomer_Pover_PRIV FROM    Detal_Poverhnost ' +
-    ' WHERE (Kod_detal = :kod_detal) AND (Flag_Arxiv = 1) and (ID_Pover=:ParamID)');
+    ' WHERE (Kod_detal = :kod_detal) AND (Flag_Arxiv = 1) and (Nomer_Pover_A_NPVA_TP01=:ParamID)');
   // Запись параметров
   DataModule1.ADOQuery.Parameters.ParamByName('kod_detal').Value := detal;
   DataModule1.ADOQuery.Parameters.ParamByName('ParamID').Value := id;

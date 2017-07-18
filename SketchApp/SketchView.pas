@@ -54,24 +54,26 @@ type
     procedure Clear;
 
     // Вставка закрытого цилиндра
-    procedure Insert_OutsideClosedSurfaces(currTrans: ptrTrans;
-      flagLeft: boolean; numPrivLeft, numPrivRight: integer;
+    procedure Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean;
+      numPrivLeft, numPrivRight: integer;
       leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
       diamHalfopenedCyl, lengthHalfopenedCyl: single);
 
     // Вставка наружных полуоткрытых поверхностей (выемок)
-    procedure Insert_OutsideHalfopenSurfaces(currTrans: ptrTrans;
-      flagLeft: boolean; nomerPov: integer = 0; podrezTorec: single = 0;
-      tochitPover: single = 0);
+    procedure Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean;
+      nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
+
+    // Вставка наружных конусов
+    procedure Insert_OutsideCon(currTrans: ptrTrans; flagLeft: boolean;
+      P1, P2: TPOINT);
 
     // Вставка внутреннего открытого цилиндра (вырез)
-    procedure Insert_InnerOpenCylinder(currentTransition: ptrTrans;
+    procedure Insert_InOpenCyl(currentTransition: ptrTrans;
       nomerPovTorec: integer; diametr: single);
 
     // Вставка внутренних полуоткрытых поверхностей (вырезов)
-    procedure Insert_InnerHalfopenSurfaces(currTrans: ptrTrans;
-      flagLeft: boolean; nomerPov: integer = 0; podrezTorec: single = 0;
-      tochitPover: single = 0);
+    procedure Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean;
+      nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
 
     // изменение размера левого или правого торца
     procedure Resize_Torec(currTrans: ptrTrans);
@@ -209,7 +211,7 @@ begin
   razmLeftPodrez := 0;
 end;
 
-procedure TSketchView.Insert_OutsideClosedSurfaces(currTrans: ptrTrans;
+procedure TSketchView.Insert_OutClosedSurf(currTrans: ptrTrans;
   flagLeft: boolean; numPrivLeft, numPrivRight: integer;
   leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec, diamHalfopenedCyl,
   lengthHalfopenedCyl: single);
@@ -235,7 +237,7 @@ begin
   existOutClosedCylinder := false;
 
   // проверяем, есть ли уже внутренний вырез
-  // (если номер обрабатываемой поверхности уже существует во внутренних поверхностях эскиза)
+  // (если номер обрабатываемой поверхности уже существует в поверхностях эскиза)
   for i := 0 to OutsideSurfaces.Count - 1 do
   begin
     if (pSurf(OutsideSurfaces[i]).number = nomerPov) then
@@ -279,7 +281,7 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-         pSurf(OutsideSurfaces[i_existClosedCylinder - 1]).point[0] := P1;
+        pSurf(OutsideSurfaces[i_existClosedCylinder - 1]).point[0] := P1;
       end
       // если нет, то вставляем поверхность
       else
@@ -310,8 +312,8 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-         pSurf(OutsideSurfaces[i_existClosedCylinder]).point[0] := P1;
-         pSurf(OutsideSurfaces[i_existClosedCylinder]).point[1] := P2;
+        pSurf(OutsideSurfaces[i_existClosedCylinder]).point[0] := P1;
+        pSurf(OutsideSurfaces[i_existClosedCylinder]).point[1] := P2;
       end
       // если нет, то вставляем поверхность
       else
@@ -338,8 +340,8 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-         pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[0] := P1;
-         pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[1] := P2;
+        pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[0] := P1;
+        pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[1] := P2;
       end
       // если нет, то вставляем поверхность
       else
@@ -363,9 +365,9 @@ begin
       // если да, то изменяем лишь размеры
       if (existOutClosedCylinder) then
       begin
-         pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[0].Y := P1.Y;
-         pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[1].Y := P2.Y;
-         pSurf(OutsideSurfaces[i_existClosedCylinder + 3]).point[0].Y := P2.Y;
+        pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[0].Y := P1.Y;
+        pSurf(OutsideSurfaces[i_existClosedCylinder + 2]).point[1].Y := P2.Y;
+        pSurf(OutsideSurfaces[i_existClosedCylinder + 3]).point[0].Y := P2.Y;
       end
       // если нет, то вставляем поверхность
       else
@@ -472,30 +474,41 @@ begin
 
 end;
 
-procedure TSketchView.Insert_OutsideHalfopenSurfaces(currTrans: ptrTrans;
-  flagLeft: boolean; nomerPov: integer; podrezTorec, tochitPover: single);
+procedure TSketchView.Insert_OutsideCon(currTrans: ptrTrans; flagLeft: boolean;
+  P1, P2: TPOINT);
 var
-  Id: integer;
-  P1, P2: TPOINT;
+  i, Id: integer;
   Index: integer;
-  number, Kod_PKDA, Kod_NUSL: integer;
+  nomerPov, Kod_PKDA, Kod_NUSL: integer;
+  lengthDet, leftTorDet: single;
 begin
 
   // вычисляем индекс поверхности-цилиндра, к которому будем привязывать выемку
-  Id := GetOutsideSurfPriv(tochitPover, flagLeft);
+  Id := GetOutsideSurfPriv(P2.Y, flagLeft);
+  nomerPov := currTrans.NPVA;
+
+  // находим размер привязки  и координату X левого торца
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+    if (pSurf(OutsideSurfaces[i]).NUSL = 9907) then
+      lengthDet := pSurf(OutsideSurfaces[i]).point[0].X;
+
+    if (pSurf(OutsideSurfaces[i]).NUSL = 9901) then
+      leftTorDet := pSurf(OutsideSurfaces[i]).point[0].X;
+  end;
 
   // вставляем поверхности справа
-  if (not(flagLeft)) then
+  // if (not(flagLeft)) then
   begin
-    // Вставляем правый полуоткрытый торец
+    // Вставляем конус
     begin
-      P1.X := round(podrezTorec);
-      P2.X := P1.X;
-      P1.Y := round(pSurf(OutsideSurfaces[Id]).point[1].Y);
-      P2.Y := round(tochitPover);
+
       Kod_PKDA := 2132;
       Kod_NUSL := 9905;
       Index := Id + 1;
+
+      P1.X := round(lengthDet - P1.X);
+      // P2.X := lengthDet - P2.X;
 
       if (flagPodrezLevTorec) then
       begin
@@ -505,27 +518,136 @@ begin
 
       InsertSurf(true, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
       // И изменяем размеры цилиндра, который перед вставленным торцем
-      pSurf(OutsideSurfaces[Id]).point[1].X := P1.X;
+      // pSurf(OutsideSurfaces[Id]).point[1].X := P1.X;
+    end;
+  end
+
+  // else // слева
+  // begin
+  // // Вставляем левый полуоткрытый цилиндр
+  // begin
+  //
+  // Kod_PKDA := 2112;
+  // Kod_NUSL := 9902;
+  // Index := Id + 1;
+  //
+  // if (flagPodrezLevTorec) then
+  // begin
+  // P1.X := P1.X + round(razmLeftPodrez);
+  // P2.X := P2.X + round(razmLeftPodrez);
+  // end;
+  //
+  // InsertSurf(true, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+  // // Изменяем размер торца, который идет до  вставленного цилиндра
+  // // pSurf(OutsideSurfaces[Id - 1]).point[1].Y := P1.Y;
+  // end;
+  //
+  // end; // закрывает else
+
+end;
+
+procedure TSketchView.Insert_OutHalfopenSurf(currTrans: ptrTrans;
+  flagLeft: boolean; nomerPov: integer; podrezTorec, tochitPover: single);
+var
+  Id, i, i_existOutHalfopenCylinder: integer;
+  P1, P2: TPOINT;
+  Index: integer;
+  number, Kod_PKDA, Kod_NUSL: integer;
+  existOutHalfopenCylinder: boolean;
+begin
+
+  // вычисляем индекс поверхности-цилиндра, к которому будем привязывать выемку
+  Id := GetOutsideSurfPriv(tochitPover, flagLeft);
+
+  existOutHalfopenCylinder := false;
+
+  // проверяем, есть ли уже выемка
+  // (если номер обрабатываемой поверхности уже существует в поверхностях эскиза)
+  for i := 0 to OutsideSurfaces.Count - 1 do
+  begin
+    if ((pSurf(OutsideSurfaces[i]).number = nomerPov)) then
+    begin
+      existOutHalfopenCylinder := true;
+      i_existOutHalfopenCylinder := i;
+      break;
+    end;
+  end;
+
+  // вставляем поверхности справа
+  if (not(flagLeft)) then
+  begin
+    // Вставляем правый полуоткрытый торец
+    begin
+      try
+        P1.X := round(podrezTorec);
+        P2.X := P1.X;
+        P1.Y := round(pSurf(OutsideSurfaces[Id]).point[1].Y);
+        P2.Y := round(tochitPover);
+        Kod_PKDA := 2132;
+        Kod_NUSL := 9905;
+        Index := Id + 1;
+
+        // если да, то изменяем лишь размеры
+        if (existOutHalfopenCylinder) then
+        begin
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder]).point[0].X := P1.X;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder]).point[1] := P2;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder - 1])
+            .point[1].X := P2.X;
+        end
+        // если нет, то вставляем поверхность
+        else
+        begin
+          if (flagPodrezLevTorec) then
+          begin
+            P1.X := P1.X + round(razmLeftPodrez);
+            P2.X := P2.X + round(razmLeftPodrez);
+          end;
+          InsertSurf(true, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+          // И изменяем размеры цилиндра, который перед вставленным торцем
+          pSurf(OutsideSurfaces[Id]).point[1].X := P1.X;
+        end;
+      except
+        ShowMessage(currTrans.NPVA.ToString());
+      end; // закрываем try
     end;
 
     // Вставляем правый полуоткрытый цилиндр
     begin
-      P1.X := round(podrezTorec);
-      P2.X := round(pSurf(OutsideSurfaces[Id + 2]).point[1].X);
-      P1.Y := round(tochitPover);
-      P2.Y := round(tochitPover);
-      Kod_PKDA := 2112;
-      number := nomerPov + 1;
-      Kod_NUSL := 9906;
-      Index := Id + 2;
+      try
+        P1.X := round(podrezTorec);
+        P2.X := round(pSurf(OutsideSurfaces[Id + 2]).point[1].X);
+        P1.Y := round(tochitPover);
+        P2.Y := round(tochitPover);
+        Kod_PKDA := 2112;
+        number := nomerPov + 1;
+        Kod_NUSL := 9906;
+        Index := Id + 2;
 
-      // Если подрезали левый торец
-      if (flagPodrezLevTorec) then
-        P1.X := P1.X + round(razmLeftPodrez);
+        // если да, то изменяем лишь размеры
+        if (existOutHalfopenCylinder) then
+        begin
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder + 1]).point[0] := P1;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder + 1])
+            .point[1].Y := P2.Y;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder + 2])
+            .point[0].Y := P2.Y;
+        end
+        // если нет, то вставляем поверхность
+        else
+        begin
+          // Если подрезали левый торец
+          if (flagPodrezLevTorec) then
+            P1.X := P1.X + round(razmLeftPodrez);
+          InsertSurf(true, P1, P2, Index, number, Kod_PKDA, Kod_NUSL);
+          // Изменяем размер торца, который идет за вставленным цилиндром
+          pSurf(OutsideSurfaces[Id + 3]).point[0].Y := P2.Y;
+        end;
 
-      InsertSurf(true, P1, P2, Index, number, Kod_PKDA, Kod_NUSL);
-      // Изменяем размер торца, который идет за вставленным цилиндром
-      pSurf(OutsideSurfaces[Id + 3]).point[0].Y := P2.Y;
+      except
+        ShowMessage(currTrans.NPVA.ToString());
+      end; // закрываем try
+
     end;
 
   end
@@ -534,43 +656,78 @@ begin
   begin
     // Вставляем левый полуоткрытый цилиндр
     begin
-      P1.X := round(pSurf(OutsideSurfaces[Id]).point[0].X);
-      P2.X := round(podrezTorec);
-      P1.Y := round(tochitPover);
-      P2.Y := round(tochitPover);
-      Kod_PKDA := 2112;
-      Kod_NUSL := 9902;
-      Index := Id + 1;
+      try
+        P1.X := round(pSurf(OutsideSurfaces[Id]).point[0].X);
+        P2.X := round(podrezTorec);
+        P1.Y := round(tochitPover);
+        P2.Y := round(tochitPover);
+        Kod_PKDA := 2112;
+        Kod_NUSL := 9902;
+        Index := Id + 1;
 
-      if (flagPodrezLevTorec) then
-        P2.X := P2.X + round(razmLeftPodrez);
+        if (flagPodrezLevTorec) then
+          P2.X := P2.X + round(razmLeftPodrez);
 
-      InsertSurf(true, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
-      // Изменяем размер торца, который идет до  вставленного цилиндра
-      pSurf(OutsideSurfaces[Id - 1]).point[1].Y := P1.Y;
+        // если да, то изменяем лишь размеры
+        if (existOutHalfopenCylinder) then
+        begin
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder]).point[0].Y := P1.Y;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder]).point[1] := P2;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder - 1])
+            .point[1].Y := P2.Y;
+        end
+        // если нет, то вставляем поверхность
+        else
+        begin
+
+          InsertSurf(true, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+          // Изменяем размер торца, который идет до  вставленного цилиндра
+          pSurf(OutsideSurfaces[Id - 1]).point[1].Y := P1.Y;
+        end;
+      except
+       ShowMessage(currTrans.NPVA.ToString());
+      end; // закрываем try
     end;
 
     // Вставляем левый полуоткрытый торец
     begin
-
-      P1.X := round(podrezTorec);
-      P2.X := P1.X;
-      P1.Y := round(tochitPover);
-      P2.Y := round(pSurf(OutsideSurfaces[Id]).point[0].Y);
-      number := nomerPov - 1;
-      Kod_PKDA := 2132;
-      Kod_NUSL := 9903;
-      Index := Id + 2;
-
-      if (flagPodrezLevTorec) then
-      begin
-        P1.X := P1.X + round(razmLeftPodrez);
+      try
+        P1.X := round(podrezTorec);
         P2.X := P1.X;
-      end;
+        P1.Y := round(tochitPover);
+        P2.Y := round(pSurf(OutsideSurfaces[Id]).point[0].Y);
+        number := nomerPov - 1;
+        Kod_PKDA := 2132;
+        Kod_NUSL := 9903;
+        Index := Id + 2;
 
-      InsertSurf(true, P1, P2, Index, number, Kod_PKDA, Kod_NUSL);
-      // Изменяем размер цилиндра, который идет после  вставленного торца
-      pSurf(OutsideSurfaces[Id]).point[0].X := P1.X;
+        if (flagPodrezLevTorec) then
+        begin
+          P1.X := P1.X + round(razmLeftPodrez);
+          P2.X := P1.X;
+        end;
+
+        // если да, то изменяем лишь размеры
+        if (existOutHalfopenCylinder) then
+        begin
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder + 1]).point[0] := P1;
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder + 1])
+            .point[1].X := P2.X;
+
+          pSurf(OutsideSurfaces[i_existOutHalfopenCylinder + 2])
+            .point[0].X := P2.X;
+        end
+        // если нет, то вставляем поверхность
+        else
+        begin
+          InsertSurf(true, P1, P2, Index, number, Kod_PKDA, Kod_NUSL);
+          // Изменяем размер цилиндра, который идет после  вставленного торца
+          pSurf(OutsideSurfaces[Id]).point[0].X := P1.X;
+        end;
+
+      except
+       ShowMessage(currTrans.NPVA.ToString());
+      end; // закрываем try
     end;
 
   end; // закрывает else
@@ -601,7 +758,7 @@ begin
   end;
 end;
 
-procedure TSketchView.Insert_InnerHalfopenSurfaces(currTrans: ptrTrans;
+procedure TSketchView.Insert_InHalfopenSurf(currTrans: ptrTrans;
   flagLeft: boolean; nomerPov: integer = 0; podrezTorec: single = 0;
   tochitPover: single = 0);
 var
@@ -789,7 +946,7 @@ begin
   end;
 end;
 
-procedure TSketchView.Insert_InnerOpenCylinder(currentTransition: ptrTrans;
+procedure TSketchView.Insert_InOpenCyl(currentTransition: ptrTrans;
   nomerPovTorec: integer; diametr: single);
 var
   i: integer;
@@ -799,8 +956,8 @@ var
   P1, P2: TPOINT;
   Index: integer;
   Kod_PKDA, Kod_NUSL: integer;
-
 begin
+
   existInnerOpenCylinder := false;
 
   // проверяем, есть ли уже внутренний открытый цилиндр
@@ -1011,7 +1168,7 @@ begin
   new(surface);
   surface.point[0] := TPOINT.Create(0, round(DiamZagot));
   surface.point[1] := TPOINT.Create(round(LenZagot), round(DiamZagot));
-  surface.number := 2;
+  surface.number := 102;
   surface.L_POVB := 1;
   surface.R_POVV := 3;
   surface.PKDA := 2111;
@@ -1023,7 +1180,7 @@ begin
   new(surface);
   surface.point[0] := TPOINT.Create(round(LenZagot), round(DiamZagot));
   surface.point[1] := TPOINT.Create(round(LenZagot), 0);
-  surface.number := 3;
+  surface.number := 103;
   surface.L_POVB := 2;
   surface.R_POVV := 0;
   surface.PKDA := 2131;
