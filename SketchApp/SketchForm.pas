@@ -62,28 +62,28 @@ begin
   AssignFile(f, 'file.txt');
   Rewrite(f);
    Writeln(f, ' Наружние поверхности');
-  for i := 0 to m_sketchView.OutsideSurfaces.Count - 1 do
+  for i := 0 to m_sketchView.OutSurf.Count - 1 do
   begin
-    Writeln(f, (pSurf(m_sketchView.OutsideSurfaces[i]).number.ToString()));
-    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.OutsideSurfaces[i])
-      .PKDA.ToString()) + '   X1: ' + pSurf(m_sketchView.OutsideSurfaces[i])
-      .point[0].X.ToString() + ' Y1: ' + pSurf(m_sketchView.OutsideSurfaces[i])
-      .point[0].Y.ToString() + '   X2: ' + pSurf(m_sketchView.OutsideSurfaces[i]
-      ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.OutsideSurfaces[i])
+    Writeln(f, (pSurf(m_sketchView.OutSurf[i]).number.ToString()));
+    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.OutSurf[i])
+      .PKDA.ToString()) + '   X1: ' + pSurf(m_sketchView.OutSurf[i])
+      .point[0].X.ToString() + ' Y1: ' + pSurf(m_sketchView.OutSurf[i])
+      .point[0].Y.ToString() + '   X2: ' + pSurf(m_sketchView.OutSurf[i]
+      ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.OutSurf[i])
       .point[1].Y.ToString());
   end;
 
   Writeln(f, ' ');
    Writeln(f, ' Внутренние поверхности');
 
-  for i := 0 to m_sketchView.InnerSurfaces.Count - 1 do
+  for i := 0 to m_sketchView.InnerSurf.Count - 1 do
   begin
-    Writeln(f, (pSurf(m_sketchView.InnerSurfaces[i]).number.ToString()));
-    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.InnerSurfaces[i])
-      .PKDA.ToString()) + '   X1: ' + pSurf(m_sketchView.InnerSurfaces[i])
-      .point[0].X.ToString() + ' Y1: ' + pSurf(m_sketchView.InnerSurfaces[i])
-      .point[0].Y.ToString() + '   X2: ' + pSurf(m_sketchView.InnerSurfaces[i]
-      ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.InnerSurfaces[i])
+    Writeln(f, (pSurf(m_sketchView.InnerSurf[i]).number.ToString()));
+    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.InnerSurf[i])
+      .PKDA.ToString()) + '   X1: ' + pSurf(m_sketchView.InnerSurf[i])
+      .point[0].X.ToString() + ' Y1: ' + pSurf(m_sketchView.InnerSurf[i])
+      .point[0].Y.ToString() + '   X2: ' + pSurf(m_sketchView.InnerSurf[i]
+      ).point[1].X.ToString() + ' Y2: ' + pSurf(m_sketchView.InnerSurf[i])
       .point[1].Y.ToString());
   end;
 
