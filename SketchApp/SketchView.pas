@@ -537,7 +537,7 @@ begin
   end;
 
   // вставл€ем поверхности справа
-   if (not(flagLeft)) then
+  if (not(flagLeft)) then
   begin
     // ¬ставл€ем конус
     begin
@@ -571,29 +571,42 @@ begin
       end;
 
     end;
-  end ;
+  end
 
-  // else // слева
-  // begin
-  // // ¬ставл€ем левый полуоткрытый цилиндр
-  // begin
-  //
-  // Kod_PKDA := 2112;
-  // Kod_NUSL := 9902;
-  // Index := Id + 1;
-  //
-  // if (flagPodrezLevTorec) then
-  // begin
-  // P1.X := P1.X + round(razmLeftPodrez);
-  // P2.X := P2.X + round(razmLeftPodrez);
-  // end;
-  //
-  // InsertSurf(3, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
-  // // »змен€ем размер торца, который идет до  вставленного цилиндра
-  // // pSurf(OutsideSurfaces[Id - 1]).point[1].Y := P1.Y;
-  // end;
-  //
-  // end; // закрывает else
+  else // слева
+  begin
+
+      Kod_PKDA := 2122;
+      Kod_NUSL := 9906;
+      Index := Id + 1;
+
+      P1.X := round(lengthDet - P1.X);
+      // вычисл€ем вторую координату конуса
+      P2.X := P1.X + P2.X;
+
+      if not(existOutCon) then
+        InsertSurf(3, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL)
+      else
+      begin
+        pSurf(OutCon[i_existOutCon]).point[0] := P1;
+        pSurf(OutCon[i_existOutCon]).point[1] := P2;
+      end;
+
+      for i := 0 to OutSurf.Count - 1 do
+      begin
+        // измен€ем размеры предыдущего  торца
+        if (pSurf(OutSurf[i]).PKDA = 2132) and
+          (pSurf(OutSurf[i]).point[0].X = P1.X) then
+          pSurf(OutSurf[i]).point[1].Y := P1.Y;
+        // измен€ем размеры последующего  цилиндра
+        if (pSurf(OutSurf[i]).PKDA = 2112) and
+          (pSurf(OutSurf[i]).point[0].Y = P2.Y) then
+          pSurf(OutSurf[i]).point[0].X := P2.X;
+      end;
+
+
+
+  end; // закрывает else
 
 end;
 
@@ -1096,7 +1109,7 @@ begin
         pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
 
       // измен€ем максимальную координату правого торца
-      if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y)
+      if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y)
       then
         pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
       else

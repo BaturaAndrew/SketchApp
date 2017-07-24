@@ -45,18 +45,15 @@ type
     function PositionCut: boolean;
 
     function IsClosed(NPVA: integer): boolean;
-
-    // если в переходах есть обработка закрытого цилиндра, то получаем размер и привязочную поверхность
-    function IfClosedCylindr(POVV: integer; var podrezTorec: single;
-      var PRIV: integer): boolean;
+    function GetPKDA(NPVA: integer): integer;
 
     // Заполенение ValueListEditor1  информацией о текущем переходе
     procedure FillList(trans: ptrTransition);
 
     // Вычисление размера подрезки
-    function CalculatedSizePodrez(nomerSurf: integer): single;
+    function CalculatedOutSizePodrez(nomerSurf: integer): single;
     // Вычисление размера подрезки
-    function CalculatedInnerSizePodrez(nomerSurf: integer): single;
+    function CalculatedInSizePodrez(nomerSurf: integer): single;
   public
     // Объект хранящий входные данные (информация о переходе)
     m_InputData: TInputData;
@@ -76,7 +73,7 @@ implementation
 uses
   SketchForm;
 
-function TProcessingTransition.CalculatedInnerSizePodrez
+function TProcessingTransition.CalculatedInSizePodrez
   (nomerSurf: integer): single;
 var
   i: integer;
@@ -105,7 +102,8 @@ begin
   result := size;
 end;
 
-function TProcessingTransition.CalculatedSizePodrez(nomerSurf: integer): single;
+function TProcessingTransition.CalculatedOutSizePodrez
+  (nomerSurf: integer): single;
 var
   i, j: integer;
   size, lengthDet: single;
@@ -125,7 +123,7 @@ begin
     NPVA := round(GetSurfSize(NPVA)[3]);
   end;
   lengthDet := 0;
-  // находим размер привязки  и координату X левого торца
+  // находим текущую длину детали
   for i := 0 to m_InputData.listSurface.Count - 1 do
   begin
     if (pSurf(m_InputData.listSurface[i]).NUSL = 9907) and
@@ -169,126 +167,83 @@ begin
   skipTrans := 0;
 end;
 
-// Определение положения выемок
+// Определение положения выемок по коду NUSL
 function TProcessingTransition.PositionCut: boolean;
+var
+  NUSL: integer;
 begin
 
-  // когда выемку делаем за один переход "точить поверхность, выдерживая ..."
-  if (((m_InputData.currTrans.PKDA = 2112) or
-    (m_InputData.currTrans.PKDA = 3212)) and
-    (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
-  begin
-    if ((m_InputData.currTrans.R_POVV > m_InputData.currTrans.L_POVB)) then
-      // выемка слева
-      result := true
-    else // иначе - справа
-      result := false;
-  end;
-
-  // делаем вырез за один переход
-  if (m_InputData.currTrans.PKDA = -3212) then
-    if ((m_InputData.currTrans.R_POVV < m_InputData.currTrans.L_POVB)) then
-      // выемка слева
-      result := true
-    else // иначе - справа
-      result := false;
-
-  // делаем внешний конус
-  if (m_InputData.currTrans.PKDA = 2122) then
-    if ((m_InputData.currTrans.R_POVV < m_InputData.currTrans.L_POVB)) then
-      // конус слева
-      result := false
-    else // иначе - справа
-      result := true;
-
-  // когда выемку делаем за 2 перехода
-  if ((m_InputData.currTrans.PKDA = 2132) or (m_InputData.joinTrans.PKDA = 2132)
-    or (m_InputData.currTrans.PKDA = -2132) or
-    (m_InputData.joinTrans.PKDA = -2132)) then
-  begin
-    // Рассматриваем первый переход из пары "точить поверхность - подрезать торец"
-    if ((m_InputData.currTrans.PKDA = 2132) or
-      (m_InputData.currTrans.PKDA = -2132)) then
-
-      if ((m_InputData.currTrans.R_POVV > m_InputData.currTrans.L_POVB)) then
-        // выемка справа
-        result := false
-      else // иначе - слева
-        result := true;
-
-    // Рассматриваем второй переход из пары "точить поверхность - подрезать торец"
-    if ((m_InputData.joinTrans.PKDA = 2132) or
-      (m_InputData.joinTrans.PKDA = -2132)) then
-      if ((m_InputData.joinTrans.R_POVV > m_InputData.joinTrans.L_POVB)) then
-        // выемка справа
-        result := false
-      else // иначе - слева
-        result := true;
-  end;
+  NUSL := m_InputData.currTrans.NUSL;
+  if ((NUSL = 9906) or (NUSL = 9905) or (NUSL = 9915) or (NUSL = 9916)) then
+    // выемка справа
+    result := false;
+  // иначе - слева
+  if ((NUSL = 9902) or (NUSL = 9903) or (NUSL = 9912) or (NUSL = 9913)) then
+    result := true;
 
 end;
 
 procedure TProcessingTransition.ProcessingTransition(i_transition: integer);
 var
   str: string;
+  PKDA: integer;
 begin
+
+  // очищаем данные о предыдущих переходах.
+  m_InputData.ClearPrevTransitions;
+  // очищаем ValueListEditor1
+  while MainForm.ValueListEditor1.Strings.Count > 0 do
+    MainForm.ValueListEditor1.DeleteRow(1);
+
   // номер обрабатываемо перехода.
   // Когда skipTrans>0, тогда пропускаем соответствующее количество переходов
   i_trans := i_transition + skipTrans;
 
-  // очищаем данные о предыдущих переходах.
-  m_InputData.ClearPrevTransitions;
-
   if ((i_trans) < (m_InputData.countTransitions)) then
   begin
-
-    // очищаем ValueListEditor1
-    while MainForm.ValueListEditor1.Strings.Count > 0 do
-      MainForm.ValueListEditor1.DeleteRow(1);
 
     // Читаем данные текущего перехода в  переменную currTrans
     m_InputData.ReadCurrentTransition(m_InputData.currTrans, i_trans);
 
+    PKDA := m_InputData.currTrans.PKDA;
+
     // Если подрезаем левый или правый торец
-    if (m_InputData.currTrans.PKDA = 2131) then
+    if (PKDA = 2131) then
       CutTorec;
 
     // Если точим максимальный цилиндр
-    if ((m_InputData.currTrans.PKDA = 2111) and
-      (m_InputData.currTrans.SizesFromTP[0] > 0)) then
+    if ((PKDA = 2111) and (m_InputData.currTrans.SizesFromTP[0] > 0)) then
       CutCylinder;
 
     // Если точим внешний конус
-    if (m_InputData.currTrans.PKDA = 2122) then
+    if (PKDA = 2122) then
       MakeOutCon;
 
-    // проверяем, что делаем: полуоткрытый цилиндр
+    // проверяем, что делаем:
     begin
-
+      // полуоткрытый цилиндр
       begin
         // если в переходах первый переход - "точить"
-        if ((m_InputData.currTrans.PKDA = 2112) or
-          (m_InputData.currTrans.PKDA = 3212) or
-          (m_InputData.currTrans.PKDA = 3222)) then
+        if ((PKDA = 2112) or (PKDA = 3212) or (PKDA = 3222)) then
           // и новый цилиндр - не закрытый
           if not(IsClosed(m_InputData.currTrans.NPVA)) then
             MakeOutHalfOpenCyl;
         // если в переходах первый переход - "подрезать"
-        if (m_InputData.currTrans.PKDA = 2132) then
+        if (PKDA = 2132) then
           // и новый цилиндр - не закрытый
           if not(IsClosed(m_InputData.currTrans.R_POVV)) then
             MakeOutHalfOpenCyl;
       end;
 
       // или закрытый  цилиндр
-      if (m_InputData.currTrans.PKDA = 2112) then
+      if (PKDA = 2112) then
         if (IsClosed(m_InputData.currTrans.NPVA)) then
           MakeOutClosedCyl;
     end;
 
     // Если делаем вырезы
-    str := IntToStr(m_InputData.currTrans.PKDA);
-    if (m_InputData.currTrans.PKDA < 0) then
+    str := IntToStr(PKDA);
+    if (PKDA < 0) then
       // делаем сквозное отверстие
       if (str[str.length] = '1') then
         MakeInOpenCyl
@@ -368,34 +323,6 @@ begin
 
 end;
 
-function TProcessingTransition.IfClosedCylindr(POVV: integer;
-  var podrezTorec: single; var PRIV: integer): boolean;
-var
-  i: integer;
-  isNotPOVV: boolean;
-begin
-
-  // если нету POVV в переходах, то true
-  isNotPOVV := true;
-
-  // Просматриваем, если ли в переходах обработка поверхности  POVV
-  for i := 0 to m_InputData.listTrans.Count - 1 do
-    if (pSurf(m_InputData.listTrans[i]).number = POVV) then
-      isNotPOVV := false;
-
-  if (isNotPOVV) then
-    // Отыскиваем диаметры предыдущего и следующего цилиндров
-    for i := 0 to m_InputData.listSurface.Count - 1 do
-      if (pSurf(m_InputData.listSurface[i]).number = POVV) then
-      begin
-        podrezTorec := pSurf(m_InputData.listSurface[i]).Sizes[0];
-        PRIV := pSurf(m_InputData.listSurface[i]).PRIV;
-      end;
-
-  result := isNotPOVV;
-
-end;
-
 procedure TProcessingTransition.InitSQL;
 var
   detal: integer;
@@ -415,7 +342,7 @@ var
   i: integer;
   NPVA_PrevCylindr, NPVA_NextCylindr: integer;
   diam, diamPrevCylindr, diamNextCylindr: single;
-
+  PKDA: integer;
 begin
 
   NPVA_PrevCylindr := NPVA - 2;
@@ -428,16 +355,14 @@ begin
     if (pSurf(m_InputData.listSurface[i]).number = NPVA) then
       diam := pSurf(m_InputData.listSurface[i]).Sizes[0];
 
+    PKDA := pSurf(m_InputData.listSurface[i]).PKDA;
+
     if (pSurf(m_InputData.listSurface[i]).number = NPVA_PrevCylindr) and
-      ((pSurf(m_InputData.listSurface[i]).PKDA = 2112) or
-      (pSurf(m_InputData.listSurface[i]).PKDA = 2111)or
-      (pSurf(m_InputData.listSurface[i]).PKDA = 2122)) then
+      ((PKDA = 2112) or (PKDA = 2111) or (PKDA = 2122)) then
       diamPrevCylindr := pSurf(m_InputData.listSurface[i]).Sizes[0];
 
     if (pSurf(m_InputData.listSurface[i]).number = NPVA_NextCylindr) and
-      ((pSurf(m_InputData.listSurface[i]).PKDA = 2112) or
-      (pSurf(m_InputData.listSurface[i]).PKDA = 2111)or
-      (pSurf(m_InputData.listSurface[i]).PKDA = 2122)) then
+      ((PKDA = 2112) or (PKDA = 2111) or (PKDA = 2122)) then
       diamNextCylindr := pSurf(m_InputData.listSurface[i]).Sizes[0];
 
   end;
@@ -451,6 +376,17 @@ begin
   end
   else
     result := false;
+
+end;
+
+function TProcessingTransition.GetPKDA(NPVA: integer): integer;
+var
+  i: integer;
+begin
+
+  for i := 0 to m_InputData.listSurface.Count - 1 do
+    if (pSurf(m_InputData.listSurface[i]).number = NPVA) then
+      result := pSurf(m_InputData.listSurface[i]).PKDA;
 
 end;
 
@@ -484,15 +420,15 @@ begin
   // Вычисляем размеры для торцев в зависимости от расположения относительно макс. диаметра
   if flagLeft then
   begin
-  //  leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
-   leftTor := m_InputData.joinTrans.SizesFromTP[2];
-    rightTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+    // leftTor := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+    leftTor := m_InputData.joinTrans.SizesFromTP[2];
+    rightTorec := CalculatedOutSizePodrez(m_InputData.joinTrans.NPVA);
   end
   else if not(flagLeft) then
   begin
-   // leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
-   leftTor := m_InputData.joinTrans.SizesFromTP[2];
-    rightTorec := CalculatedSizePodrez(m_InputData.currTrans.L_POVB);
+    // leftTor := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
+    leftTor := m_InputData.joinTrans.SizesFromTP[2];
+    rightTorec := CalculatedOutSizePodrez(m_InputData.currTrans.L_POVB);
   end;
 
   MainForm.m_sketchView.Insert_OutClosedSurf(m_InputData.currTrans, flagLeft,
@@ -545,84 +481,136 @@ var
   tochitPover, podrezTorec: single;
   nomerPovTorec: integer;
   nomerPriv: integer;
+  PKDA, POVB, POVV: integer;
+  pkda1, pkda2: integer;
+  existCon: boolean;
+  nomerCon: integer;
 begin
+  existCon := false;
 
-  // Условие, когда для отрисовки эскиза нужна пара связанных переходов
-  // (точить поверхность и подрезать торец)
-  if (((m_InputData.currTrans.PKDA = 2112) or
-    (m_InputData.currTrans.PKDA = 3222)) and
+  PKDA := m_InputData.currTrans.PKDA;
+  POVB := m_InputData.currTrans.L_POVB;
+  POVV := m_InputData.currTrans.R_POVV;
+
+  pkda1 := GetPKDA(POVB);
+  pkda2 := GetPKDA(POVV);
+
+  // Условие, когда для отрисовки эскиза нужна информация о 2-м переходе
+  if (((PKDA = 2112) or (PKDA = 3222)) and
     (m_InputData.currTrans.SizesFromTP[2] = 0) and
     (m_InputData.currTrans.SizesFromTP[0] > 0)) then
   begin
     if (m_InputData.countTransitions > i_trans + 1) then
-      // читаем данные перехода, связанного  с текущим
-      m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1);
+      // если цилиндр между торцами
+      if (((GetPKDA(POVB) = 2132) or ((GetPKDA(POVB) = 2131))) and
+        ((GetPKDA(POVV) = 2132) or ((GetPKDA(POVB) = 2131)))) then
+        // читаем данные перехода, связанного  с текущим
+        m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1)
+        // иначе между торцем и цилиндром
+      else
+      begin
+        existCon := true;
+        m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1)
+      end;
   end;
-  if (m_InputData.currTrans.PKDA = 2132) then
+  if (PKDA = 2132) then
   begin
     if (m_InputData.countTransitions > i_trans + 1) then
-      // читаем данные перехода, связанного  с текущим
       m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1);
   end;
 
   // определение положение выемок
   flagLeft := PositionCut;
 
-  // Если  обрабатываем 1 переход
-  // в переходе сразу точим цилиндр и подрезаем торец
-  if (((m_InputData.currTrans.PKDA = 2112) or
-    (m_InputData.currTrans.PKDA = 3212)) and
-    // (когда в переходе "точить..." есть размер ..TP14 )
-    (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
+   if not(existCon) then
   begin
 
-    podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.R_POVV);
-    tochitPover := m_InputData.currTrans.SizesFromTP[0];
-
-    MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.currTrans,
-      flagLeft, nomerPriv, podrezTorec, tochitPover);
-
-    FillList(m_InputData.currTrans);
-  end
-
-  // Если обрабатываем 2 перехода
-  else
-  begin
-
-    // Рассматриваем первый переход из пары
-    if (m_InputData.currTrans.PKDA = 2132) then
+    // Если  обрабатываем 1 переход
+    // в переходе сразу точим цилиндр и подрезаем торец
+    if (((PKDA = 2112) or (PKDA = 3212)) and
+      // (когда в переходе "точить..." есть размер ..TP14 )
+      (m_InputData.currTrans.SizesFromTP[2] <> 0)) then
     begin
-      // новая длина детали
-      podrezTorec := CalculatedSizePodrez(m_InputData.currTrans.NPVA);
-      // на сколько подрезаем цилиндр
-      tochitPover := m_InputData.joinTrans.SizesFromTP[0];
-      // номер поверхности нового торца
-      nomerPovTorec := m_InputData.currTrans.NPVA;
 
-      // вставляем поверхности
+      podrezTorec := CalculatedOutSizePodrez(m_InputData.currTrans.R_POVV);
+      tochitPover := m_InputData.currTrans.SizesFromTP[0];
+      // номер поверхности нового торца
+      if not(flagLeft) then
+        nomerPovTorec := m_InputData.currTrans.NPVA - 1
+      else
+        nomerPovTorec := m_InputData.currTrans.NPVA + 1;
+
       MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.currTrans,
         flagLeft, nomerPovTorec, podrezTorec, tochitPover);
 
-      // если делая выемку обрабатываем сразу 2 перехода, то один переход пропускаем
-      skipTrans := skipTrans + 1;
-    end;
+      FillList(m_InputData.currTrans);
+    end
 
-    // Рассматриваем второй переход из пары
-    if (m_InputData.joinTrans.PKDA = 2132) then
+    // Если обрабатываем 2 перехода
+    else
     begin
-      podrezTorec := CalculatedSizePodrez(m_InputData.joinTrans.NPVA);
-      tochitPover := m_InputData.currTrans.SizesFromTP[0];
-      nomerPovTorec := m_InputData.joinTrans.NPVA;
 
-      MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.joinTrans,
-        flagLeft, nomerPovTorec, podrezTorec, tochitPover);
+      // Рассматриваем первый переход из пары
+      if (PKDA = 2132) then
+      begin
+        // новая длина детали
+        podrezTorec := CalculatedOutSizePodrez(m_InputData.currTrans.NPVA);
+        // на сколько подрезаем цилиндр
+        tochitPover := m_InputData.joinTrans.SizesFromTP[0];
+        // номер поверхности нового торца
+        nomerPovTorec := m_InputData.currTrans.NPVA;
 
-      skipTrans := skipTrans + 1;
+        // вставляем поверхности
+        MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.currTrans,
+          flagLeft, nomerPovTorec, podrezTorec, tochitPover);
+
+        // если делая выемку обрабатываем сразу 2 перехода, то один переход пропускаем
+        skipTrans := skipTrans + 1;
+      end;
+
+      // Рассматриваем второй переход из пары
+      if (m_InputData.joinTrans.PKDA = 2132) then
+      begin
+        podrezTorec := CalculatedOutSizePodrez(m_InputData.joinTrans.NPVA);
+        tochitPover := m_InputData.currTrans.SizesFromTP[0];
+        nomerPovTorec := m_InputData.joinTrans.NPVA;
+
+        MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.joinTrans,
+          flagLeft, nomerPovTorec, podrezTorec, tochitPover);
+
+        skipTrans := skipTrans + 1;
+      end;
+
+      FillList(m_InputData.currTrans);
+      FillList(m_InputData.joinTrans);
     end;
 
-    FillList(m_InputData.currTrans);
-    FillList(m_InputData.joinTrans);
-  end;
+  end // if not(existCyl)
+   // если подрезаемый цилиндр между     торцем и конусом
+   else
+   begin
+
+   if flagLeft then
+   nomerCon := POVV
+   else
+   nomerCon := POVB;
+
+//  /// /    // проходим переходы и ищем обработку конуса
+//  /// /    for i := 0 to m_InputData.listTrans.Count - 1 do
+//  /// /    begin
+//  /// /      if (ptrTrans(m_InputData.listTrans[i]).NPVA = nomerCon) then
+//  /// /        if (flagLeft) then
+//  /// /                  podrezTorec := ptrTrans(m_InputData.listTrans[i]).;
+//  /// /    end;
+
+   podrezTorec := m_InputData.currTrans.SizesFromTP[1];
+   tochitPover := m_InputData.currTrans.SizesFromTP[0];
+   nomerPovTorec := m_InputData.joinTrans.NPVA;
+
+   MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.joinTrans,
+   flagLeft, nomerPovTorec, podrezTorec, tochitPover);
+
+   end;
 end;
 
 // Вставка внутреннего полуоткрытого цилиндра
@@ -663,7 +651,7 @@ begin
 
       // новая длина детали
       // podrezTorec := m_InputData.currTrans.SizesFromTP[2];
-      podrezTorec := CalculatedInnerSizePodrez(m_InputData.currTrans.NPVA);
+      podrezTorec := CalculatedInSizePodrez(m_InputData.currTrans.NPVA);
 
       // на сколько подрезаем цилиндр
       tochitPover := m_InputData.joinTrans.SizesFromTP[0];
@@ -680,7 +668,7 @@ begin
       // Рассматриваем второй переход из пары
       if (m_InputData.joinTrans.PKDA = -2132) then
       begin
-        podrezTorec := CalculatedInnerSizePodrez(m_InputData.joinTrans.NPVA);
+        podrezTorec := CalculatedInSizePodrez(m_InputData.joinTrans.NPVA);
         // podrezTorec := m_InputData.joinTrans.SizesFromTP[2];
         tochitPover := m_InputData.currTrans.SizesFromTP[0];
         nomerPovTorec := m_InputData.joinTrans.NPVA;
