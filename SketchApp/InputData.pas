@@ -5,7 +5,7 @@ interface
 uses SysUtils, Dialogs, Classes, ADODB, Windows;
 
 type
-  paramSurfArray = array [0 .. 4] of integer;
+  paramSurfArray = array [0 .. 5] of integer;
 
   // указатель на запись
   ptrTrans = ^RTransition;
@@ -51,8 +51,8 @@ type
     NUSL: integer;
     // Номер поверхности привязки
     PRIV: integer;
-    // Par1, Par2, Par3
-    Sizes: array [0 .. 2] of single;
+    // Par1, Par2, Par3 , Par4, Par5
+    Sizes: array [0 .. 5] of single;
   end;
 
   // класс отвечает за чтение данных из базы и за их хранение
@@ -145,7 +145,7 @@ var
   i: integer;
   mass: paramSurfArray;
 begin
-  for i := 0 to 4 do
+  for i := 0 to 5 do
     mass[i] := 0;
 
   // Инициализируем  запрос
@@ -282,6 +282,8 @@ begin
     surfase.Sizes[0] := tempDataSet.Fields[6].AsInteger;
     surfase.Sizes[1] := tempDataSet.Fields[7].AsInteger;
     surfase.Sizes[2] := tempDataSet.Fields[8].AsInteger;
+    surfase.Sizes[3] := tempDataSet.Fields[9].AsInteger;
+    surfase.Sizes[4] := tempDataSet.Fields[10].AsInteger;
 
     listSurface.Add(surfase);
     tempDataSet.Next;
