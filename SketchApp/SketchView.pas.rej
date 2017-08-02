@@ -1,0 +1,73 @@
+diff a/SketchApp/SketchView.pas b/SketchApp/SketchView.pas	(rejected hunks)
+@@ -356,21 +356,71 @@
+         X2 := X1;
+       end;
+       InsertSurf(true, X1, X2, Y1, Y2, Id, number, Kod_PKDA, Kod_NUSL);
++=======
++        P1.X := P1.X + round(razmLeftPodrez);
++        P2.X := P2.X + round(razmLeftPodrez);
++      end;
++
++      // ���� ��, �� �������� ���� �������
++      if (existOutClosedCylinder) then
++      begin
++        pSurf(OutsideSurfaces[i_existClosedCylinder]).point[0] := P1;
++        pSurf(OutsideSurfaces[i_existClosedCylinder]).point[1] := P2;
++      end
++      // ���� ���, �� ��������� �����������
++      else
++        InsertSurf(true, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
++    end;
++
++    // ��������� ������ ������������ �����
++    begin
++      P1.X := round(leftTor + lengthClosedCylindr);
++      P2.X := P1.X;
++      P1.Y := round(diamClosedCyl);
++      P2.Y := round(diamHalfopenedCyl);
++      number := nomerPov + 1;
++      Kod_PKDA := 2132;
++      Kod_NUSL := 9903;
++      Index := Id;
++      // ���� ��������� ����� �����
++      if (flagPodrezLevTorec) then
++      begin
++        P1.X := P1.X + round(razmLeftPodrez);
++        P2.X := P1.X;
++      end;
++      // ���� ��, �� �������� ���� �������
++      if (existOutClosedCylinder) then
++      begin
++        pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[0] := P1;
++        pSurf(OutsideSurfaces[i_existClosedCylinder + 1]).point[1] := P2;
++      end
++      // ���� ���, �� ��������� �����������
++      else
++        InsertSurf(true, P1, P2, Index, number, Kod_PKDA, Kod_NUSL);
++>>>>>>> f153781d92d17c696446f9ebeb3d5f50e16f4b46
+     end;
+ 
+     // ��������� ������ ������������ �������
+     begin
+ 
++<<<<<<< HEAD
+       X1 := round(leftTor + lengthClosedCylindr);
+       X2 := round(lengthDet);
+       Y1 := round(diamHalfopenedCyl);
+       Y2 := round(diamHalfopenedCyl);
++=======
++      P1.X := round(leftTor + lengthClosedCylindr);
++      P2.X := round(lengthDet);
++      P1.Y := round(diamHalfopenedCyl);
++      P2.Y := round(diamHalfopenedCyl);
++>>>>>>> f153781d92d17c696446f9ebeb3d5f50e16f4b46
+       Kod_PKDA := 2112;
+       Kod_NUSL := 9902;
+       number := nomerPov + 2;
+       Index := Id + 1;
+ 
+       if (flagPodrezLevTorec) then
++<<<<<<< HEAD
+         X1 := X1 + round(razmLeftPodrez);
+       InsertSurf(true, X1, X2, Y1, Y2, Index, number, Kod_PKDA, Kod_NUSL);
+ 

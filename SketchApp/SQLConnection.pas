@@ -3,7 +3,7 @@ unit SQLConnection;
 interface
 
 uses
-  SysUtils, IniFiles, Forms, Dialogs, ADODB;
+  SysUtils, IniFiles, Forms, Dialogs, ADODB, Windows;
 
 type
 
@@ -22,10 +22,9 @@ type
     // конструктор
     constructor Create;
 
-
   protected
     procedure ReadIni;
-
+    function GetComputerNetName: string;
   end;
 
 implementation
@@ -36,10 +35,22 @@ uses DataModule;
 
 constructor TSqlConnection.Create;
 begin
-  serverName := '';
-  databaseName := '';
+  serverName := 'local';
+  databaseName := 'agro_mex';
   SetConnection;
 
+end;
+
+function TSqlConnection.GetComputerNetName: string;
+var
+  buffer: array [0 .. 255] of Char;
+  size: dword;
+begin
+  size := 256;
+  if GetComputerName(buffer, size) then
+    Result := buffer
+  else
+    Result := ''
 end;
 
 function TSqlConnection.SetConnection: TAdoConnection;
@@ -51,6 +62,9 @@ begin
 
   // Чтение файла .ini
   ReadIni;
+
+  serverName := GetComputerNetName;
+  // ShowMessage(serverName+' '+databaseName);
 
   // Подключение к БД
   DataModule.DataModule1.ADOConnection1.Connected := False;
@@ -91,8 +105,6 @@ begin
   Result := DataModule.DataModule1.ADOConnection1;
 end;
 
-
-
 procedure TSqlConnection.ReadIni();
 
 var
@@ -101,14 +113,13 @@ begin
   // Чтение Sapr.ini файла
   Try
     IniFile1 := TIniFile.Create(GetCurrentDir + '\Sapr.ini');
-    serverName := IniFile1.ReadString('BD', 'server', 'local');
-    databaseName := IniFile1.ReadString('BD', 'alias_bd', '');
+    // serverName := IniFile1.ReadString('BD', 'server', 'local');
+    databaseName := IniFile1.ReadString('BD', 'alias_bd', 'agro_mex');
   Finally
     IniFile1.Free;
     IniFile1 := NIL;
   end;
 end;
-
 
 procedure TSqlConnection.SetSpReadTransitions(detal: integer);
 begin

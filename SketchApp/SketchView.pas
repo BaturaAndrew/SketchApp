@@ -75,6 +75,9 @@ type
     // Вставка  цилиндра
     procedure Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
+    // Вставка  цилиндра
+    procedure Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+
     // Вставка внутреннего открытого цилиндра (вырез)
     procedure Insert_InOpenCyl(currentTransition: ptrTrans;
       nomerPovTorec: integer; diametr: single);
@@ -555,12 +558,6 @@ begin
       Kod_NUSL := 9906;
       Index := Id + 1;
 
-      if (flagPodrezLevTorec) then
-      begin
-        P1.X := P1.X + round(razmLeftPodrez);
-        P2.X := P2.X + round(razmLeftPodrez);
-      end;
-
       if not(existOutCon) then
         InsertSurf(3, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL)
       else
@@ -663,11 +660,7 @@ begin
         Kod_PKDA := 2132;
         Kod_NUSL := 9905;
         Index := Id + 1;
-        // if (flagPodrezLevTorec) then
-        // begin
-        // P1.X := P1.X + round(razmLeftPodrez);
-        // P2.X := P2.X + round(razmLeftPodrez);
-        // end;
+
         // если да, то изменяем лишь размеры
         if (existOutHalfopenCylinder) then
         begin
@@ -698,11 +691,7 @@ begin
         number := nomerPov + 1;
         Kod_NUSL := 9906;
         Index := Id + 2;
-        // if (flagPodrezLevTorec) then
-        // begin
-        // P1.X := P1.X + round(razmLeftPodrez);
-        // P2.X := P2.X + round(razmLeftPodrez);
-        // end;
+
         // если да, то изменяем лишь размеры
         if (existOutHalfopenCylinder) then
         begin
@@ -804,6 +793,67 @@ begin
   end; // закрывает else
 end;
 
+procedure TSketchView.Insert_Tor(nomerPov: integer; flagLeft: boolean;
+  P1, P2: TPOINT);
+var
+  i, Id, i_existOutTor: integer;
+  Index: integer;
+  Kod_PKDA, Kod_NUSL: integer;
+  lengthDet: single;
+  existOutTor: boolean;
+begin
+
+  // вычисляем индекс поверхности-цилиндра, к которому будем привязывать выемку
+  Id := GetOutsideSurfPriv(P2.Y, flagLeft);
+
+  existOutTor := false;
+  // проверяем, есть ли уже торец
+  for i := 0 to OutCon.Count - 1 do
+  begin
+    if ((pSurf(OutSurf[i]).number = nomerPov)) then
+    begin
+      existOutTor := true;
+      i_existOutTor := i;
+      break;
+    end;
+  end;
+
+  if (flagPodrezLevTorec) then
+  begin
+    P1.X := P1.X + round(razmLeftPodrez);
+    P2.X := P2.X + round(razmLeftPodrez);;
+  end;
+
+  Kod_PKDA := 2132;
+  Kod_NUSL := 9903;
+  Index := Id + 1;
+
+  // берем координату Y из привязочного конуса
+  P1.Y := pSurf(OutSurf[Id]).point[0].Y;
+
+  if not(existOutTor) then
+    InsertSurf(1, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL)
+  else
+  begin
+    pSurf(OutSurf[i_existOutTor]).point[0] := P1;
+    pSurf(OutSurf[i_existOutTor]).point[1] := P2;
+  end;
+
+//  if flagLeft then
+//  begin
+//    // изменяем размеры цилиндра, связанного с конусом
+//    pSurf(OutSurf[Id]).point[0].X := P2.X;
+//    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
+//    pSurf(OutSurf[Id]).point[1].Y := P2.Y;
+//  end
+//  else
+//  begin
+//    pSurf(OutSurf[Id]).point[1].X := P2.X;
+//    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
+//    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
+//  end;
+end;
+
 procedure TSketchView.InsertSurf(flagSurf: integer; P1, P2: TPOINT;
   Index, number, Kod_PKDA, Kod_NUSL: integer);
 var
@@ -877,19 +927,19 @@ begin
     pSurf(OutCon[i_existOutCon]).point[1] := P2;
   end;
 
-  if flagLeft then
-  begin
-    // изменяем размеры цилиндра, связанного с конусом
-    pSurf(OutSurf[Id]).point[0].X := P2.X;
-    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
-    pSurf(OutSurf[Id]).point[1].Y := P2.Y;
-  end
-  else
-  begin
-    pSurf(OutSurf[Id]).point[1].X := P2.X;
-    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
-    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
-  end;
+//  if flagLeft then
+//  begin
+//    // изменяем размеры цилиндра, связанного с конусом
+//    pSurf(OutSurf[Id]).point[0].X := P2.X;
+//    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
+//    pSurf(OutSurf[Id]).point[1].Y := P2.Y;
+//  end
+//  else
+//  begin
+//    pSurf(OutSurf[Id]).point[1].X := P2.X;
+//    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
+//    pSurf(OutSurf[Id]).point[0].Y := P2.Y;
+//  end;
 end;
 
 procedure TSketchView.Insert_Cyl(nomerPov: integer; flagLeft: boolean;

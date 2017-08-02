@@ -497,10 +497,11 @@ var
   nomerPriv: integer;
   NPVA, PKDA, POVB, POVV: integer;
   d1_con, d2_con, horizProjection: integer;
-  existCon: boolean;
+  existCylCon: boolean;
   P1, P2: TPOINT;
+  faceOfReference: integer;
 begin
-  existCon := false;
+  existCylCon := false;
 
   NPVA := m_InputData.currTrans.NPVA;
   PKDA := m_InputData.currTrans.PKDA;
@@ -508,33 +509,37 @@ begin
   POVV := m_InputData.currTrans.R_POVV;
 
   // Условие, когда для отрисовки эскиза нужна информация о 2-м переходе
-  if (((PKDA = 2112) or (PKDA = 3222)) and
-    (m_InputData.currTrans.SizesFromTP[2] = 0) and
-    (m_InputData.currTrans.SizesFromTP[0] > 0)) then
-  begin
-    if (m_InputData.countTransitions > i_trans + 1) then
-      // если цилиндр между торцами
-      if (((GetPKDA(POVB) = 2132) or ((GetPKDA(POVB) = 2131))) and
-        ((GetPKDA(POVV) = 2132) or ((GetPKDA(POVV) = 2131)))) then
+  BEGIN
+    // если переход "точить.."
+    if (((PKDA = 2112) or (PKDA = 3222)) and
+      (m_InputData.currTrans.SizesFromTP[2] = 0) and
+      (m_InputData.currTrans.SizesFromTP[0] > 0)) then
+    begin
+      if (m_InputData.countTransitions > i_trans + 1) then
+      begin
+        // если цилиндр между торцами
+        if (((GetPKDA(POVB) = 2132) or ((GetPKDA(POVB) = 2131))) and
+          ((GetPKDA(POVV) = 2132) or ((GetPKDA(POVV) = 2131)))) then
+          existCylCon := false
+        else // иначе между торцем и цилиндром
+          existCylCon := true;
+
         // читаем данные перехода, связанного  с текущим
         m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1)
-        // иначе между торцем и цилиндром
-      else
-      begin
-        existCon := true;
-        m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1)
       end;
-  end;
-  if (PKDA = 2132) then
-  begin
-    if (m_InputData.countTransitions > i_trans + 1) then
-      m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1);
-  end;
+    end;
+    // если переход "подрезать.."
+    if (PKDA = 2132) then
+    begin
+      if (m_InputData.countTransitions > i_trans + 1) then
+        m_InputData.ReadCurrentTransition(m_InputData.joinTrans, i_trans + 1);
+    end;
+  END;
 
   // определение положение выемок
   flagLeft := PositionCut;
 
-  if not(existCon) then
+  if not(existCylCon) then
   begin
 
     // Если  обрабатываем 1 переход
@@ -563,8 +568,12 @@ begin
     begin
 
       // Рассматриваем первый переход из пары
-      if (PKDA = 2132) then
+      if (PKDA = 2132) and ((m_InputData.joinTrans.PKDA = 2112) or
+        (m_InputData.joinTrans.PKDA = 3212)) then
       begin
+        // от какого торца отсчитываем подрезку
+        faceOfReference := GetSurfSize(NPVA)[5];
+
         // новая длина детали
         podrezTorec := CalcOutSizeTor(NPVA);
         // на сколько подрезаем цилиндр
@@ -581,7 +590,8 @@ begin
       end;
 
       // Рассматриваем второй переход из пары
-      if (m_InputData.joinTrans.PKDA = 2132) then
+      if (m_InputData.joinTrans.PKDA = 2132) and ((PKDA = 2112) or (PKDA = 3212))
+      then
       begin
         podrezTorec := CalcOutSizeTor(m_InputData.joinTrans.NPVA);
         tochitPover := m_InputData.currTrans.SizesFromTP[0];
@@ -597,11 +607,67 @@ begin
       FillList(m_InputData.joinTrans);
     end;
 
-  end // закрываем if not(existCyl)
-  // если подрезаемый цилиндр между торцем и конусом
-  else
-  begin
+    // Рассматриваем переход с точением конуса
+    if (PKDA = 2132) and (m_InputData.joinTrans.PKDA = 2122) then
+    begin
+      // новая длина детали
+      podrezTorec := CalcOutSizeTor(NPVA);
+      // на сколько подрезаем цилиндр
+      tochitPover := m_InputData.joinTrans.SizesFromTP[0];
+      // номер поверхности нового торца
+      nomerPovTorec := NPVA;
+      /// //////////////////////////////  ????????????????????????????????
+      // проходим поверхности и ищим  конус
+      for i := 0 to m_InputData.listSurface.Count - 1 do
+        if (pSurf(m_InputData.listSurface[i]).number = POVV) then
+        begin
+          d1_con := round(pSurf(m_InputData.listSurface[i]).Sizes[0]);
+          d2_con := round(pSurf(m_InputData.listSurface[i]).Sizes[4]);
+          horizProjection := round(pSurf(m_InputData.listSurface[i]).Sizes[1]);
+        end;
 
+      podrezTorec := CalcOutSizeTor(NPVA);
+      // координаты торца
+      P1.X := round(podrezTorec);
+      P2.X := round(podrezTorec);
+      // P1.Y := round(tochitPover);  вопрос
+      if (d1_con > d2_con) then
+        P2.Y := d1_con
+      else
+        P2.Y := d2_con;
+
+      MainForm.m_sketchView.Insert_Tor(NPVA, flagLeft, P1, P2);
+
+      // координаты конуса
+
+      P1.X := round(podrezTorec);
+
+      if (d1_con > d2_con) then
+      begin
+        P1.Y := d2_con;
+        P2.Y := d1_con;
+      end
+      else
+      begin
+        P1.Y := d1_con;
+        P2.Y := d2_con;
+      end;
+
+      if (flagLeft) then
+        P2.X := P1.X - horizProjection
+      else
+        P2.X := P1.X + horizProjection;
+
+      MainForm.m_sketchView.Insert_Con(POVB, flagLeft, P1, P2);
+
+      skipTrans := skipTrans + 1;
+    end;
+
+  end; // закрываем if not(existCyl)
+
+  // если подрезаемый цилиндр между торцем и конусом
+  if (existCylCon) then
+  begin
     // проходим поверхности и ищим  конус
     for i := 0 to m_InputData.listSurface.Count - 1 do
       if (pSurf(m_InputData.listSurface[i]).number = POVV) then
@@ -645,6 +711,7 @@ begin
 
     skipTrans := skipTrans + 1;
   end;
+
 end;
 
 // Вставка внутреннего полуоткрытого цилиндра
@@ -695,7 +762,7 @@ begin
       // вставляем поверхности
       MainForm.m_sketchView.Insert_InHalfopenSurf(m_InputData.currTrans,
         flagLeft, nomerPovTorec, podrezTorec, tochitPover);
-      // если делая выемку обрабатываем сразу 2 перехода, то один переход пропускаем
+
       skipTrans := skipTrans + 1;
     end
     else
@@ -725,13 +792,11 @@ var
   nomerPovTorec: integer;
 begin
 
-  // length := m_InputData.jointTrans.SizesFromTP[1];
   diametr := m_InputData.currTrans.SizesFromTP[0];
   nomerPovTorec := m_InputData.currTrans.NPVA;
 
   MainForm.m_sketchView.Insert_InOpenCyl(m_InputData.currTrans,
     nomerPovTorec, diametr);
-
   FillList(m_InputData.currTrans);
 end;
 

@@ -19,17 +19,17 @@ type
 
 var
   DataModule1: TDataModule1;
-    sqlConnect: TSqlConnection;
+  sqlConnect: TSqlConnection;
 
 implementation
 
-{%CLASSGROUP 'Vcl.Controls.TControl'}
+{ %CLASSGROUP 'Vcl.Controls.TControl' }
 
 {$R *.dfm}
 
 procedure TDataModule1.DataModuleCreate(Sender: TObject);
 begin
- // Создаем строку подключения
+  // Создаем строку подключения
   sqlConnect := TSqlConnection.Create;
 end;
 
