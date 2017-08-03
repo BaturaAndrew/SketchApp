@@ -113,7 +113,8 @@ begin
   else if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) > ((pSurf(Item2).point[0].X) + (pSurf(Item2).point[1].X)) then
     Result := 1
   else
-    Result := 0
+    Result := 0;
+
 end;
 
 procedure TSketchView.Clear;
@@ -679,7 +680,7 @@ begin
         begin
           pSurf(OutSurf[i_existOutHalfopenCylinder + 1]).point[0] := P1;
           pSurf(OutSurf[i_existOutHalfopenCylinder + 1]).point[1].Y := P2.Y;
-          pSurf(OutSurf[i_existOutHalfopenCylinder + 2]).point[0].Y := P2.Y;
+          // pSurf(OutSurf[i_existOutHalfopenCylinder + 2]).point[0].Y := P2.Y;
         end
         // если нет, то вставляем поверхность
         else
@@ -789,7 +790,7 @@ begin
 
   existOutTor := false;
   // проверяем, есть ли уже торец
-  for i := 0 to OutCon.Count - 1 do
+  for i := 0 to OutSurf.Count - 1 do
   begin
     if ((pSurf(OutSurf[i]).number = nomerPov)) then
     begin
@@ -803,14 +804,13 @@ begin
   begin
     P1.X := P1.X + round(razmLeftPodrez);
     P2.X := P2.X + round(razmLeftPodrez);
-    ;
   end;
 
   Kod_PKDA := 2132;
   Kod_NUSL := 9903;
   Index := Id + 1;
 
-  // берем координату Y из привязочного конуса
+  // берем координату Y из привязочного цилиндра
   P1.Y := pSurf(OutSurf[Id]).point[0].Y;
 
   if not (existOutTor) then
@@ -941,22 +941,22 @@ begin
   Id := GetOutsideSurfPriv(P2.Y, flagLeft);
 
   existOutCyl := false;
-  // // проверяем, есть ли уже конус
-  // for i := 0 to OutCon.Count - 1 do
-  // begin
-  // if ((pSurf(OutCon[i]).number = nomerPov)) then
-  // begin
-  // existOutCyl := true;
-  // i_existOutCyl := i;
-  // break;
-  // end;
-  // end;
+   // проверяем, есть ли уже конус
+  for i := 0 to OutSurf.Count - 1 do
+  begin
+    if ((pSurf(OutSurf[i]).number = nomerPov)) then
+    begin
+      existOutCyl := true;
+      i_existOutCyl := i;
+      break;
+    end;
+  end;
 
-  // координаты цилиндра
-  if (flagLeft) then
-    P1.X := round(pSurf(OutSurf[Id - 1]).point[0].X)
-  else if (not (flagLeft)) then
-    P2.X := round(pSurf(OutSurf[Id + 1]).point[0].X);
+//  // координаты цилиндра
+//  if (flagLeft) then
+//    P1.X := round(pSurf(OutSurf[Id - 1]).point[0].X)
+//  else if (not (flagLeft)) then
+//    P2.X := round(pSurf(OutSurf[Id + 1]).point[0].X);
 
   if (flagPodrezLevTorec) then
   begin
@@ -976,8 +976,8 @@ begin
     InsertSurf(1, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL)
   else
   begin
-    pSurf(OutCon[i_existOutCyl]).point[0] := P1;
-    pSurf(OutCon[i_existOutCyl]).point[1] := P2;
+    pSurf(OutSurf[i_existOutCyl]).point[0] := P1;
+    pSurf(OutSurf[i_existOutCyl]).point[1] := P2;
   end;
 
 end;
@@ -1256,26 +1256,26 @@ begin
       for j := 0 to MainForm.ProcessTrans.m_InputData.listSurface.Count - 1 do
         if ((pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).PKDA = 2111)) then
         begin
-          PKDA1 := MainForm.ProcessTrans.GetPKDA(pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).L_POVB);
-          PKDA2 := MainForm.ProcessTrans.GetPKDA(pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).R_POVV);
+          PKDA1 := MainForm.ProcessTrans.GetSurfParam(pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).L_POVB).PKDA;
+          PKDA2 := MainForm.ProcessTrans.GetSurfParam(pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).R_POVV).PKDA;
         end;
 
-      // если максимальный диаметр между торцами, тогда изменяем размеры торцев
-      if (((PKDA1 = 2132) or (PKDA1 = 2131)) and ((PKDA2 = 2132) or (PKDA2 = 2131))) or (OutCon.Count = 0) then
-      begin
-        // изменяем максимальную координату левого торца
-        if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i - 1]).point[0].Y) then
-          pSurf(OutSurf[i - 1]).point[1].Y := round(newSize)
-        else
-          pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
-
-        // изменяем максимальную координату правого торца
-        if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y) then
-          pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
-        else
-          pSurf(OutSurf[i + 1]).point[0].Y := round(newSize);
-
-      end;
+//      // если максимальный диаметр между торцами, тогда изменяем размеры торцев
+//      if (((PKDA1 = 2132) or (PKDA1 = 2131)) and ((PKDA2 = 2132) or (PKDA2 = 2131))) or (OutCon.Count = 0) then
+//      begin
+//        // изменяем максимальную координату левого торца
+//        if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i - 1]).point[0].Y) then
+//          pSurf(OutSurf[i - 1]).point[1].Y := round(newSize)
+//        else
+//          pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
+//
+//        // изменяем максимальную координату правого торца
+//        if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y) then
+//          pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
+//        else
+//          pSurf(OutSurf[i + 1]).point[0].Y := round(newSize);
+//
+//      end;
 
     end;
   end;
@@ -1304,7 +1304,7 @@ begin
       // если подрезаем правый торец
       if (pSurf(OutSurf[i]).NUSL = 9907) and (Kod_NUSL = 9907) then
       begin
-        pSurf(OutSurf[i - 1]).point[1].X := round(newSize);
+      //  pSurf(OutSurf[i - 1]).point[1].X := round(newSize);
         pSurf(OutSurf[i]).point[0].X := round(newSize);
         pSurf(OutSurf[i]).point[1].X := round(newSize);
 
@@ -1330,7 +1330,7 @@ begin
       // если подрезаем левый торец
       else if (pSurf(OutSurf[i]).NUSL = 9901) and (Kod_NUSL = 9901) then
       begin
-        pSurf(OutSurf[i + 1]).point[0].X := round(maxsLenth - newSize);
+       // pSurf(OutSurf[i + 1]).point[0].X := round(maxsLenth - newSize);
         pSurf(OutSurf[i]).point[0].X := round(maxsLenth - newSize);
         pSurf(OutSurf[i]).point[1].X := round(maxsLenth - newSize);
 
@@ -1479,9 +1479,9 @@ begin
           point[0] := pSurf(ScaleOutCon[i]).point[0];
           point[1] := pSurf(ScaleOutCon[i]).point[1];
 
-          TextOut(point[0].X + 5, point[0].Y + 5, '(' + pSurf(OutCon[i]).point[0].X.ToString + ', ' + pSurf(OutCon[i]).point[0].Y.ToString + ' )');
+          TextOut(point[0].X - 15, point[0].Y - 25, '(' + pSurf(OutCon[i]).point[0].X.ToString + ', ' + pSurf(OutCon[i]).point[0].Y.ToString + ' )');
 
-          TextOut(point[1].X + 5, point[1].Y + 5, '(' + pSurf(OutCon[i]).point[1].X.ToString + ', ' + pSurf(OutCon[i]).point[1].Y.ToString + ' )');
+          TextOut(point[1].X - 15, point[1].Y - 25, '(' + pSurf(OutCon[i]).point[1].X.ToString + ', ' + pSurf(OutCon[i]).point[1].Y.ToString + ' )');
 
           MoveTo(point[0].X, point[0].Y);
           LineTo(point[1].X, point[1].Y);

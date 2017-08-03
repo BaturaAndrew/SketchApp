@@ -82,6 +82,20 @@ begin
       ' Y2: ' + pSurf(m_sketchView.InnerSurf[i]).point[1].Y.ToString());
   end;
 
+
+   Writeln(f, ' ');
+  Writeln(f, ' Конусы');
+
+  for i := 0 to m_sketchView.OutCon.Count - 1 do
+  begin
+    Writeln(f, (pSurf(m_sketchView.OutCon[i]).number.ToString()));
+    Writeln(f, 'PKDA: ' + (pSurf(m_sketchView.OutCon[i]).PKDA.ToString()) +
+      '   X1: ' + pSurf(m_sketchView.OutCon[i]).point[0].X.ToString() +
+      ' Y1: ' + pSurf(m_sketchView.OutCon[i]).point[0].Y.ToString() +
+      '   X2: ' + pSurf(m_sketchView.OutCon[i]).point[1].X.ToString() +
+      ' Y2: ' + pSurf(m_sketchView.OutCon[i]).point[1].Y.ToString());
+  end;
+
   CloseFile(f);
 end;
 
