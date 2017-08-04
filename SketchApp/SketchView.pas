@@ -646,7 +646,7 @@ begin
         begin
           pSurf(OutSurf[i_existOutHalfopenCylinder]).point[0].X := P1.X;
           pSurf(OutSurf[i_existOutHalfopenCylinder]).point[1] := P2;
-          pSurf(OutSurf[i_existOutHalfopenCylinder - 1]).point[1].X := P2.X;
+         // pSurf(OutSurf[i_existOutHalfopenCylinder - 1]).point[1].X := P2.X;
         end
         // если нет, то вставляем поверхность
         else
@@ -1304,7 +1304,7 @@ begin
       // если подрезаем правый торец
       if (pSurf(OutSurf[i]).NUSL = 9907) and (Kod_NUSL = 9907) then
       begin
-      //  pSurf(OutSurf[i - 1]).point[1].X := round(newSize);
+       // pSurf(OutSurf[i - 1]).point[1].X := round(newSize);
         pSurf(OutSurf[i]).point[0].X := round(newSize);
         pSurf(OutSurf[i]).point[1].X := round(newSize);
 

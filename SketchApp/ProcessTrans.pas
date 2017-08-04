@@ -589,7 +589,9 @@ begin
    // координаты цилиндра
     P1.X := P2.X;
     P1.Y := P2.Y;
-    nomerPov := m_InputData.currTrans.NPVA + 1;
+    // +2 потому что конус расположен между торцем и торцем, значит следующий за торцем
+    // вставляемый цилиндр имеет нумерацию Nконуса + 2
+    nomerPov := m_InputData.currTrans.NPVA + 2;
    // находим P2.X
     for i := 0 to MainForm.m_sketchView.OutSurf.Count - 1 do
     begin
@@ -659,26 +661,36 @@ begin
    // координаты цилиндра
     P1.X := P2.X;
     P1.Y := P2.Y;
-        nomerPov := m_InputData.currTrans.NPVA + 1;
+
+    if (flagLeft) then
+      nomerPov := m_InputData.currTrans.NPVA - 2
+    else
+      nomerPov := m_InputData.currTrans.NPVA + 1;
+
    // находим P2.X
     for i := 0 to MainForm.m_sketchView.OutSurf.Count - 1 do
     begin
-      if ((pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2132) or (pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2131)) and (pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X > P1.X) then
-      begin
-        P2.X := pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X;
-        break;
-      end;
-    end;
+      if not (flagLeft) then
+        if ((pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2132) or (pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2131)) and (pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X > P1.X) then
+        begin
+          P2.X := pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X;
+          break;
+        end;
+      if (flagLeft) then
+        if ((pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2132) or (pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2131)) and (pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X < P1.X) then
+        begin
+          P2.X := pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X;
+          break;
+        end;
 
-     MainForm.m_sketchView.Insert_Cyl(nomerPov, flagLeft, P1, P2);
+    end;
+    MainForm.m_sketchView.Insert_Cyl(nomerPov, flagLeft, P1, P2);
   end;
 
   // Вставляем торец
   begin
     // читаем данные перехода "точить конус"
     m_InputData.ReadCurrentTransition(m_InputData.currTrans, i_trans + 1);
-   // пропускаем один переход
-    skipTrans := skipTrans + 1;
 
     nomerPov := m_InputData.currTrans.NPVA;
   // определение положение выемок
@@ -686,7 +698,7 @@ begin
 
     podrezTorec := m_InputData.currTrans.SizesFromTP[2];
   // берем величину подрезки из перехода "точить конус"
-    for i := 0 to m_InputData.countTransitions - 1 do
+    for i := i_trans to m_InputData.countTransitions - 1 do
     begin
       if ptrTrans(m_InputData.listTrans[i]).NPVA = m_InputData.currTrans.R_POVV then
       begin
@@ -703,6 +715,9 @@ begin
     MainForm.m_sketchView.Insert_Tor(nomerPov, flagLeft, P1, P2);
 
     FillList(m_InputData.currTrans);
+
+    // пропускаем один переход
+    skipTrans := skipTrans + 1;
   end;
 
 end;
@@ -752,7 +767,7 @@ begin
         // если цилиндр между торцами
         if (((GetSurfParam(POVB).PKDA = 2132) or ((GetSurfParam(POVB).PKDA = 2131))) and ((GetSurfParam(POVV).PKDA = 2132) or ((GetSurfParam(POVV).PKDA = 2131)))) then
           existCylCon := false
-        else // иначе между торцем и цилиндром
+        else // иначе между торцем и конусом
           existCylCon := true;
 
         // читаем данные перехода, связанного  с текущим
