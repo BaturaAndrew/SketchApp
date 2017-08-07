@@ -14,8 +14,9 @@ type
   TSketchView = class
   private
     flagPodrezLevTorec: boolean;
-    razmLeftPodrez: single;
   public
+    razmLeftPodrez: single;
+
     // Экранные размеры
     m_Screen: TRECT;
     // Смещение по оси Х и У при выводе детали
@@ -55,13 +56,18 @@ type
     procedure Clear;
 
     // Вставка закрытого цилиндра
-    procedure Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean; numPrivLeft, numPrivRight: integer; leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec, diamHalfopenedCyl, lengthHalfopenedCyl: single);
+    procedure Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean; numPrivLeft,
+      numPrivRight: integer; leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
+      diamHalfopenedCyl, lengthHalfopenedCyl: single);
 
     // Вставка наружных полуоткрытых поверхностей (выемок)
-    procedure Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0; faceOfReference: integer = 1);
+    procedure Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov:
+      integer = 0; podrezTorec: single = 0; tochitPover: single = 0; faceOfReference:
+      integer = 1);
 
     // Вставка наружных конусов
-    procedure Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT; faceOfReference: integer);
+    procedure Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT;
+      faceOfReference: integer);
     // Вставка  конуса
     procedure Insert_Con(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
@@ -72,16 +78,21 @@ type
     procedure Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
     // Вставка внутреннего открытого цилиндра (вырез)
-    procedure Insert_InOpenCyl(currentTransition: ptrTrans; nomerPovTorec: integer; diametr: single);
+    procedure Insert_InOpenCyl(currentTransition: ptrTrans; nomerPovTorec: integer;
+      diametr: single);
 
     // Вставка внутренних полуоткрытых поверхностей (вырезов)
-    procedure Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
+    procedure Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov:
+      integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
 
     // изменение размера левого или правого торца
     procedure Resize_Torec(currTrans: ptrTrans);
 
     // изменение размера цилиндра
     procedure Resize_Cylinder(currTrans: ptrTrans);
+
+     // находим связанный с торцем  цилиндр
+    function GetCylinder(x: integer): integer;
   private
 
     // Преобразование координат поверхностей с учетом смещений и масштаба
@@ -97,7 +108,8 @@ type
     function GetClosedPriv(leftTor: single; flagLeft: boolean): integer;
 
     // Процедура вставки поверхности
-    procedure InsertSurf(flagSurf: integer; P1, P2: TPOINT; Index, number, Kod_PKDA, Kod_NUSL: integer);
+    procedure InsertSurf(flagSurf: integer; P1, P2: TPOINT; Index, number, Kod_PKDA,
+      Kod_NUSL: integer);
   end;
 
 implementation
@@ -108,9 +120,11 @@ uses
 function Comp(Item1, Item2: Pointer): integer;
 // С помощью этой функции реализуется	сортировка поверхностей по координате X
 begin
-  if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) < ((pSurf(Item2).point[0].X) + (pSurf(Item2).point[1].X)) then
+  if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) < ((pSurf(Item2).point[0].X)
+    + (pSurf(Item2).point[1].X)) then
     Result := -1
-  else if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) > ((pSurf(Item2).point[0].X) + (pSurf(Item2).point[1].X)) then
+  else if ((pSurf(Item1).point[0].X) + (pSurf(Item1).point[1].X)) > ((pSurf(Item2).point[0].X)
+    + (pSurf(Item2).point[1].X)) then
     Result := 1
   else
     Result := 0;
@@ -159,12 +173,14 @@ begin
       if (pSurf(OutSurf[i]).point[j].X = 0) then
         pSurf(ScaleOutSurfaces[i]).point[j].X := round(m_dx)
       else
-        pSurf(ScaleOutSurfaces[i]).point[j].X := round((m_dx + pSurf(OutSurf[i]).point[j].X * m_metric));
+        pSurf(ScaleOutSurfaces[i]).point[j].X := round((m_dx + pSurf(OutSurf[i]).point[j].X
+          * m_metric));
 
       if (pSurf(OutSurf[i]).point[j].Y = 0) then
         pSurf(ScaleOutSurfaces[i]).point[j].Y := round(m_dy)
       else
-        pSurf(ScaleOutSurfaces[i]).point[j].Y := round((m_dy + pSurf(OutSurf[i]).point[j].Y * m_metric));
+        pSurf(ScaleOutSurfaces[i]).point[j].Y := round((m_dy + pSurf(OutSurf[i]).point[j].Y
+          * m_metric));
 
     end;
 
@@ -178,12 +194,14 @@ begin
       if (pSurf(InnerSurf[i]).point[j].X = 0) then
         pSurf(ScaleInSurfaces[i]).point[j].X := round(m_dx)
       else
-        pSurf(ScaleInSurfaces[i]).point[j].X := round((m_dx + pSurf(InnerSurf[i]).point[j].X * m_metric));
+        pSurf(ScaleInSurfaces[i]).point[j].X := round((m_dx + pSurf(InnerSurf[i]).point[j].X
+          * m_metric));
 
       if (pSurf(InnerSurf[i]).point[j].Y = 0) then
         pSurf(ScaleInSurfaces[i]).point[j].Y := round(m_dy)
       else
-        pSurf(ScaleInSurfaces[i]).point[j].Y := round((m_dy + pSurf(InnerSurf[i]).point[j].Y * m_metric));
+        pSurf(ScaleInSurfaces[i]).point[j].Y := round((m_dy + pSurf(InnerSurf[i]).point[j].Y
+          * m_metric));
 
     end;
 
@@ -195,12 +213,14 @@ begin
       if (pSurf(OutCon[i]).point[j].X = 0) then
         pSurf(ScaleOutCon[i]).point[j].X := round(m_dx)
       else
-        pSurf(ScaleOutCon[i]).point[j].X := round((m_dx + pSurf(OutCon[i]).point[j].X * m_metric));
+        pSurf(ScaleOutCon[i]).point[j].X := round((m_dx + pSurf(OutCon[i]).point[j].X *
+          m_metric));
 
       if (pSurf(OutCon[i]).point[j].Y = 0) then
         pSurf(ScaleOutCon[i]).point[j].Y := round(m_dy)
       else
-        pSurf(ScaleOutCon[i]).point[j].Y := round((m_dy + pSurf(OutCon[i]).point[j].Y * m_metric));
+        pSurf(ScaleOutCon[i]).point[j].Y := round((m_dy + pSurf(OutCon[i]).point[j].Y *
+          m_metric));
 
     end;
 
@@ -232,7 +252,9 @@ begin
   razmLeftPodrez := 0;
 end;
 
-procedure TSketchView.Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean; numPrivLeft, numPrivRight: integer; leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec, diamHalfopenedCyl, lengthHalfopenedCyl: single);
+procedure TSketchView.Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean;
+  numPrivLeft, numPrivRight: integer; leftTor, diamClosedCyl, lengthClosedCylindr,
+  rightTorec, diamHalfopenedCyl, lengthHalfopenedCyl: single);
 var
   i, Id: integer;
   P1, P2: TPOINT;
@@ -492,7 +514,8 @@ begin
 
 end;
 
-procedure TSketchView.Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT; faceOfReference: integer);
+procedure TSketchView.Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT;
+  faceOfReference: integer);
 var
   i, Id, i_existOutCon: integer;
   Index: integer;
@@ -505,7 +528,7 @@ begin
   Id := GetOutsideSurfPriv(P2.Y, flagLeft);
   nomerPov := currTrans.NPVA;
 
-  // находим размер привязки и координату X левого торца
+  // находим размер привязки
   for i := 0 to OutSurf.Count - 1 do
     if (pSurf(OutSurf[i]).NUSL = 9907) then
       lengthDet := pSurf(OutSurf[i]).point[0].X;
@@ -594,7 +617,8 @@ begin
 
 end;
 
-procedure TSketchView.Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov: integer; podrezTorec, tochitPover: single; faceOfReference: integer);
+procedure TSketchView.Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean;
+  nomerPov: integer; podrezTorec, tochitPover: single; faceOfReference: integer);
 var
   Id, i, i_existOutHalfopenCylinder: integer;
   P1, P2: TPOINT;
@@ -836,7 +860,8 @@ begin
   // end;
 end;
 
-procedure TSketchView.InsertSurf(flagSurf: integer; P1, P2: TPOINT; Index, number, Kod_PKDA, Kod_NUSL: integer);
+procedure TSketchView.InsertSurf(flagSurf: integer; P1, P2: TPOINT; Index, number,
+  Kod_PKDA, Kod_NUSL: integer);
 var
   surface, surfNil: pSurf;
 begin
@@ -941,7 +966,7 @@ begin
   Id := GetOutsideSurfPriv(P2.Y, flagLeft);
 
   existOutCyl := false;
-   // проверяем, есть ли уже конус
+   // проверяем, есть ли уже цилиндр
   for i := 0 to OutSurf.Count - 1 do
   begin
     if ((pSurf(OutSurf[i]).number = nomerPov)) then
@@ -982,7 +1007,8 @@ begin
 
 end;
 
-procedure TSketchView.Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
+procedure TSketchView.Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean;
+  nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
 var
   i, j, j_tor, i_lTor, i_rTor: integer;
   surface, surface1: pSurf;
@@ -1078,12 +1104,14 @@ begin
       begin
         if (pSurf(InnerSurf[j]).PKDA = -2112) or (pSurf(InnerSurf[j]).PKDA = -2111) then
         begin
-          if ((pSurf(InnerSurf[j]).point[0].X > P2.X) and (pSurf(InnerSurf[j]).point[1].X < P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+          if ((pSurf(InnerSurf[j]).point[0].X > P2.X) and (pSurf(InnerSurf[j]).point[1].X
+            < P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
           begin
             pSurf(InnerSurf[j]).point[0].X := P2.X;
             break;
           end;
-          if ((pSurf(InnerSurf[j]).point[1].X > P2.X) and (pSurf(InnerSurf[j]).point[0].X < P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+          if ((pSurf(InnerSurf[j]).point[1].X > P2.X) and (pSurf(InnerSurf[j]).point[0].X
+            < P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
           begin
             pSurf(InnerSurf[j]).point[1].X := P2.X;
             break;
@@ -1139,12 +1167,14 @@ begin
       begin
         if (pSurf(InnerSurf[j]).PKDA = -2112) or (pSurf(InnerSurf[j]).PKDA = -2111) then
         begin
-          if ((pSurf(InnerSurf[j]).point[0].X < P2.X) and (pSurf(InnerSurf[j]).point[1].X > P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+          if ((pSurf(InnerSurf[j]).point[0].X < P2.X) and (pSurf(InnerSurf[j]).point[1].X
+            > P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
           begin
             pSurf(InnerSurf[j]).point[0].X := P2.X;
             break;
           end;
-          if ((pSurf(InnerSurf[j]).point[1].X < P2.X) and (pSurf(InnerSurf[j]).point[0].X > P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+          if ((pSurf(InnerSurf[j]).point[1].X < P2.X) and (pSurf(InnerSurf[j]).point[0].X
+            > P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
           begin
             pSurf(InnerSurf[j]).point[1].X := P2.X;
             break;
@@ -1157,7 +1187,8 @@ begin
   end;
 end;
 
-procedure TSketchView.Insert_InOpenCyl(currentTransition: ptrTrans; nomerPovTorec: integer; diametr: single);
+procedure TSketchView.Insert_InOpenCyl(currentTransition: ptrTrans; nomerPovTorec: integer;
+  diametr: single);
 var
   i: integer;
   surface, surface1: pSurf;
@@ -1253,29 +1284,106 @@ begin
       pSurf(OutSurf[i]).point[0].Y := round(newSize);
       pSurf(OutSurf[i]).point[1].Y := round(newSize);
 
+      //смотрим, в каком переходе обрабатывался максимальный диаметр и узнаем, с какими поверхностями он связан
       for j := 0 to MainForm.ProcessTrans.m_InputData.listSurface.Count - 1 do
         if ((pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).PKDA = 2111)) then
         begin
-          PKDA1 := MainForm.ProcessTrans.GetSurfParam(pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).L_POVB).PKDA;
-          PKDA2 := MainForm.ProcessTrans.GetSurfParam(pSurf(MainForm.ProcessTrans.m_InputData.listSurface[j]).R_POVV).PKDA;
+          PKDA1 := MainForm.ProcessTrans.GetSurfParam(pSurf(MainForm.ProcessTrans.m_InputData.listSurface
+            [j]).L_POVB).PKDA;
+          PKDA2 := MainForm.ProcessTrans.GetSurfParam(pSurf(MainForm.ProcessTrans.m_InputData.listSurface
+            [j]).R_POVV).PKDA;
         end;
 
-//      // если максимальный диаметр между торцами, тогда изменяем размеры торцев
-//      if (((PKDA1 = 2132) or (PKDA1 = 2131)) and ((PKDA2 = 2132) or (PKDA2 = 2131))) or (OutCon.Count = 0) then
-//      begin
-//        // изменяем максимальную координату левого торца
-//        if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i - 1]).point[0].Y) then
-//          pSurf(OutSurf[i - 1]).point[1].Y := round(newSize)
-//        else
-//          pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
-//
-//        // изменяем максимальную координату правого торца
-//        if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y) then
-//          pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
-//        else
-//          pSurf(OutSurf[i + 1]).point[0].Y := round(newSize);
-//
-//      end;
+      // если максимальный диаметр между торцами, тогда изменяем размеры торцев
+      if (((PKDA1 = 2132) or (PKDA1 = 2131)) and ((PKDA2 = 2132) or (PKDA2 = 2131))) then
+      begin
+
+        for j := 0 to OutSurf.Count - 1 do
+        begin
+          if (pSurf(OutSurf[j]).number = currTrans.L_POVB) or (pSurf(OutSurf[j]).number =
+            103) then
+          begin
+        // изменяем максимальную координату левого торца
+            if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
+              pSurf(OutSurf[j]).point[1].Y := round(newSize)
+//            else
+//              pSurf(OutSurf[j]).point[0].Y := round(newSize)
+              ;
+          end;
+        end;
+        for j := 0 to OutSurf.Count - 1 do
+        begin
+          if pSurf(OutSurf[j]).number = currTrans.R_POVV then
+          begin
+              // изменяем максимальную координату правого торца
+            if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
+              pSurf(OutSurf[j]).point[1].Y := round(newSize)
+//            else
+//              pSurf(OutSurf[j]).point[0].Y := round(newSize)
+              ;
+          end;
+        end;
+
+      end;
+       // если максимальный диаметр между торцем и конусом
+      if (PKDA1 = 2122) or (PKDA2 = 2122) then
+      begin
+        if ((PKDA1 = 2132) or (PKDA1 = 2131)) then
+        begin
+//          for j := 0 to OutCon.Count - 1 do
+//          begin
+//            if pSurf(OutCon[j]).number = currTrans.R_POVV then
+//            begin
+//                   // изменяем максимальную координату конуса справа от максимального цилиндра
+//              if (pSurf(OutCon[j]).point[1].Y > pSurf(OutCon[j]).point[0].Y) then
+//                pSurf(OutCon[j]).point[1].Y := round(newSize)
+//              else
+//                pSurf(OutCon[j]).point[0].Y := round(newSize);
+//            end;
+//          end;
+
+          for j := 0 to OutSurf.Count - 1 do
+          begin
+            if (pSurf(OutSurf[j]).number = currTrans.L_POVB) or (pSurf(OutSurf[j]).number
+              = 103) then
+            begin
+        // изменяем максимальную координату левого торца
+              if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
+                pSurf(OutSurf[j]).point[1].Y := round(newSize)
+              else
+                pSurf(OutSurf[j]).point[0].Y := round(newSize);
+            end;
+          end;
+        end;
+
+        if (PKDA2 = 2131) or (PKDA2 = 2131) then
+        begin
+
+//          for j := 0 to OutCon.Count - 1 do
+//          begin
+//            if pSurf(OutCon[j]).number = currTrans.L_POVB then
+//            begin
+//                   // изменяем максимальную координату конуса справа от максимального цилиндра
+//              if (pSurf(OutCon[j]).point[1].Y > pSurf(OutCon[j]).point[0].Y) then
+//                pSurf(OutCon[j]).point[1].Y := round(newSize)
+//              else
+//                pSurf(OutCon[j]).point[0].Y := round(newSize);
+//            end;
+//          end;
+
+          for j := 0 to OutSurf.Count - 1 do
+          begin
+            if pSurf(OutSurf[j]).number = currTrans.R_POVV then
+            begin
+              // изменяем максимальную координату правого торца
+              if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
+                pSurf(OutSurf[j]).point[1].Y := round(newSize)
+              else
+                pSurf(OutSurf[j]).point[0].Y := round(newSize);
+            end;
+          end;
+        end;
+      end;
 
     end;
   end;
@@ -1304,14 +1412,32 @@ begin
       // если подрезаем правый торец
       if (pSurf(OutSurf[i]).NUSL = 9907) and (Kod_NUSL = 9907) then
       begin
-       // pSurf(OutSurf[i - 1]).point[1].X := round(newSize);
+
         pSurf(OutSurf[i]).point[0].X := round(newSize);
         pSurf(OutSurf[i]).point[1].X := round(newSize);
+
+        // измеряем размер цилиндра
+        for j := 0 to OutSurf.count - 1 do
+          if ((pSurf(OutSurf[j]).PKDA = 2111) or (pSurf(OutSurf[j]).PKDA = 2112)) then
+          begin
+            if (pSurf(OutSurf[j]).point[1].X > pSurf(OutSurf[i]).point[1].X) then
+            begin
+              pSurf(OutSurf[j]).point[1].X := pSurf(OutSurf[i]).point[1].X;
+              if (flagPodrezLevTorec) then
+                pSurf(OutSurf[j]).point[1].X := pSurf(OutSurf[i]).point[1].X + round(razmLeftPodrez);
+            end;
+            if (pSurf(OutSurf[j]).point[0].X > pSurf(OutSurf[i]).point[1].X) then
+            begin
+              pSurf(OutSurf[j]).point[0].X := pSurf(OutSurf[i]).point[1].X;
+                 if (flagPodrezLevTorec) then
+                pSurf(OutSurf[j]).point[0].X := pSurf(OutSurf[i]).point[1].X + round(razmLeftPodrez);
+            end;
+          end;
 
         // если до этого подрезали левый торец, то прибавляем величину отрезки к размеру правого торца
         if (flagPodrezLevTorec) then
         begin
-          pSurf(OutSurf[i - 1]).point[1].X := pSurf(OutSurf[i - 1]).point[1].X + round(razmLeftPodrez);
+        //  pSurf(OutSurf[i - 1]).point[1].X := pSurf(OutSurf[i - 1]).point[1].X + round(razmLeftPodrez);
           pSurf(OutSurf[i]).point[0].X := pSurf(OutSurf[i]).point[0].X + round(razmLeftPodrez);
           pSurf(OutSurf[i]).point[1].X := pSurf(OutSurf[i]).point[1].X + round(razmLeftPodrez);
         end;
@@ -1330,9 +1456,21 @@ begin
       // если подрезаем левый торец
       else if (pSurf(OutSurf[i]).NUSL = 9901) and (Kod_NUSL = 9901) then
       begin
-       // pSurf(OutSurf[i + 1]).point[0].X := round(maxsLenth - newSize);
+
         pSurf(OutSurf[i]).point[0].X := round(maxsLenth - newSize);
         pSurf(OutSurf[i]).point[1].X := round(maxsLenth - newSize);
+
+          // измеряем размер цилиндра
+        for j := 0 to OutSurf.count - 1 do
+          if (pSurf(OutSurf[j]).PKDA = 2111) or (pSurf(OutSurf[j]).PKDA = 2112) and (pSurf
+            (OutSurf[j]).point[0].X < pSurf(OutSurf[i]).point[0].X) then
+          begin
+            if (pSurf(OutSurf[j]).point[0].X < pSurf(OutSurf[i]).point[0].X) then
+              pSurf(OutSurf[j]).point[0].X := pSurf(OutSurf[i]).point[0].X;
+
+            if (pSurf(OutSurf[j]).point[1].X < pSurf(OutSurf[i]).point[0].X) then
+              pSurf(OutSurf[j]).point[1].X := pSurf(OutSurf[i]).point[0].X;
+          end;
 
         // проходим внутренние поверхности.
         for j := 0 to InnerSurf.Count - 1 do
@@ -1425,7 +1563,8 @@ begin
         point[0] := pSurf(ScaleOutSurfaces[i]).point[0];
         point[1] := pSurf(ScaleOutSurfaces[i]).point[1];
 
-        textCoord := '(' + pSurf(OutSurf[i]).point[0].X.ToString + ', ' + pSurf(OutSurf[i]).point[0].Y.ToString + ' )';
+        textCoord := '(' + pSurf(OutSurf[i]).point[0].X.ToString + ', ' + pSurf(OutSurf[i]).point
+          [0].Y.ToString + ' )';
         TextOut( (* координаты *) point[0].X + 3, point[0].Y + 2, textCoord);
 
         MoveTo(point[0].X, point[0].Y);
@@ -1441,7 +1580,8 @@ begin
       point[0] := pSurf(ScaleOutSurfaces[0]).point[0];
 
       TextOut(point[1].X + 3, point[1].Y + 2,
-        (* текст *) '(' + pSurf(OutSurf[OutSurf.Count - 1]).point[1].X.ToString + ', ' + pSurf(OutSurf[OutSurf.Count - 1]).point[1].Y.ToString + ' )');
+        (* текст *) '(' + pSurf(OutSurf[OutSurf.Count - 1]).point[1].X.ToString + ', ' +
+          pSurf(OutSurf[OutSurf.Count - 1]).point[1].Y.ToString + ' )');
 
       MoveTo(point[1].X, point[1].Y);
       LineTo(point[0].X, point[0].Y);
@@ -1460,7 +1600,8 @@ begin
           point[0] := pSurf(ScaleInSurfaces[i]).point[0];
           point[1] := pSurf(ScaleInSurfaces[i]).point[1];
 
-          TextOut(point[0].X + 3, point[0].Y + 2, '(' + pSurf(InnerSurf[i]).point[0].X.ToString + ', ' + pSurf(InnerSurf[i]).point[0].Y.ToString + ' )');
+          TextOut(point[0].X + 3, point[0].Y + 2, '(' + pSurf(InnerSurf[i]).point[0].X.ToString
+            + ', ' + pSurf(InnerSurf[i]).point[0].Y.ToString + ' )');
 
           MoveTo(point[0].X, point[0].Y);
           LineTo(point[1].X, point[1].Y);
@@ -1479,9 +1620,11 @@ begin
           point[0] := pSurf(ScaleOutCon[i]).point[0];
           point[1] := pSurf(ScaleOutCon[i]).point[1];
 
-          TextOut(point[0].X - 15, point[0].Y - 25, '(' + pSurf(OutCon[i]).point[0].X.ToString + ', ' + pSurf(OutCon[i]).point[0].Y.ToString + ' )');
+          TextOut(point[0].X - 15, point[0].Y - 25, '(' + pSurf(OutCon[i]).point[0].X.ToString
+            + ', ' + pSurf(OutCon[i]).point[0].Y.ToString + ' )');
 
-          TextOut(point[1].X - 15, point[1].Y - 25, '(' + pSurf(OutCon[i]).point[1].X.ToString + ', ' + pSurf(OutCon[i]).point[1].Y.ToString + ' )');
+          TextOut(point[1].X - 15, point[1].Y - 25, '(' + pSurf(OutCon[i]).point[1].X.ToString
+            + ', ' + pSurf(OutCon[i]).point[1].Y.ToString + ' )');
 
           MoveTo(point[0].X, point[0].Y);
           LineTo(point[1].X, point[1].Y);
@@ -1503,7 +1646,8 @@ begin
   for i := 0 to OutSurf.Count - 1 do
   begin
     if ((pSurf(OutSurf[i]).PKDA = 2112) or (pSurf(OutSurf[i]).PKDA = 2132)) then
-      if ((pSurf(OutSurf[i]).point[1].X >= leftTor) and (pSurf(OutSurf[i]).point[0].X < leftTor)) then
+      if ((pSurf(OutSurf[i]).point[1].X >= leftTor) and (pSurf(OutSurf[i]).point[0].X <
+        leftTor)) then
         number := i;
   end;
 
@@ -1585,6 +1729,16 @@ begin
     Result := numberMaxSurf
   else
     Result := numberSurf;
+end;
+
+  // находим связанный с торцем  цилиндр
+function TSketchView.GetCylinder(x: integer): integer;
+var
+  i: Integer;
+begin
+//     for I := Low to OutSurf.count -1        do
+//           if(pSurf(OutSurf[i]).PKDA=2111)  or (pSurf(OutSurf[i]).PKDA=2112) then
+// pSurf(OutSurf[i]).point[0].X := round(newSize);
 end;
 
 end.

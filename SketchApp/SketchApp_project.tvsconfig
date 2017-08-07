@@ -1,2 +1,10 @@
 <?xml version="1.0"?>
-<TgConfig Version="3" SubLevelDisabled="False" />
+<TgConfig Version="3" SubLevelDisabled="False">
+  <Option Name="namespaceFolder.SketchApp" Type="System.String" Value="SketchApp" Category="General" IsBrowsable="False" />
+  <Option Name="namespaceFolder.SketchView" Type="System.String" Value="SketchView" Category="General" IsBrowsable="False" />
+  <Option Name="namespaceFolder.SketchForm" Type="System.String" Value="SketchForm" Category="General" IsBrowsable="False" />
+  <Option Name="namespaceFolder.ProcessTrans" Type="System.String" Value="ProcessTrans" Category="General" IsBrowsable="False" />
+  <Option Name="namespaceFolder.InputData" Type="System.String" Value="InputData" Category="General" IsBrowsable="False" />
+  <Option Name="namespaceFolder.DataModule" Type="System.String" Value="DataModule" Category="General" IsBrowsable="False" />
+  <Option Name="namespaceFolder.SQLConnection" Type="System.String" Value="SQLConnection" Category="General" IsBrowsable="False" />
+</TgConfig>
