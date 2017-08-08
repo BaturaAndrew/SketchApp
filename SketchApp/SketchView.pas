@@ -72,7 +72,8 @@ type
     procedure Insert_Con(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
     // Вставка  цилиндра
-    procedure Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+    procedure Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT; CorrectTor:
+      boolean = false);
 
     // Вставка  цилиндра
     procedure Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
@@ -110,6 +111,7 @@ type
     // Процедура вставки поверхности
     procedure InsertSurf(flagSurf: integer; P1, P2: TPOINT; Index, number, Kod_PKDA,
       Kod_NUSL: integer);
+    procedure MendTor(flagLeft: boolean; Index, correctParam: integer);
   end;
 
 implementation
@@ -670,7 +672,7 @@ begin
         begin
           pSurf(OutSurf[i_existOutHalfopenCylinder]).point[0].X := P1.X;
           pSurf(OutSurf[i_existOutHalfopenCylinder]).point[1] := P2;
-         // pSurf(OutSurf[i_existOutHalfopenCylinder - 1]).point[1].X := P2.X;
+          pSurf(OutSurf[i_existOutHalfopenCylinder - 1]).point[1].X := P2.X;
         end
         // если нет, то вставляем поверхность
         else
@@ -704,7 +706,7 @@ begin
         begin
           pSurf(OutSurf[i_existOutHalfopenCylinder + 1]).point[0] := P1;
           pSurf(OutSurf[i_existOutHalfopenCylinder + 1]).point[1].Y := P2.Y;
-          // pSurf(OutSurf[i_existOutHalfopenCylinder + 2]).point[0].Y := P2.Y;
+          pSurf(OutSurf[i_existOutHalfopenCylinder + 2]).point[0].Y := P2.Y;
         end
         // если нет, то вставляем поверхность
         else
@@ -953,7 +955,8 @@ begin
   end;
 end;
 
-procedure TSketchView.Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+procedure TSketchView.Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT;
+  CorrectTor: boolean);
 var
   i, Id, i_existOutCyl: integer;
   Index: integer;
@@ -1004,6 +1007,10 @@ begin
     pSurf(OutSurf[i_existOutCyl]).point[0] := P1;
     pSurf(OutSurf[i_existOutCyl]).point[1] := P2;
   end;
+
+  // Если нужно изменять торец
+  if CorrectTor then
+    MendTor(flagLeft, Index, P2.Y);
 
 end;
 
@@ -1308,7 +1315,7 @@ begin
               pSurf(OutSurf[j]).point[1].Y := round(newSize)
 //            else
 //              pSurf(OutSurf[j]).point[0].Y := round(newSize)
-              ;
+;
           end;
         end;
         for j := 0 to OutSurf.Count - 1 do
@@ -1320,7 +1327,7 @@ begin
               pSurf(OutSurf[j]).point[1].Y := round(newSize)
 //            else
 //              pSurf(OutSurf[j]).point[0].Y := round(newSize)
-              ;
+;
           end;
         end;
 
@@ -1429,7 +1436,7 @@ begin
             if (pSurf(OutSurf[j]).point[0].X > pSurf(OutSurf[i]).point[1].X) then
             begin
               pSurf(OutSurf[j]).point[0].X := pSurf(OutSurf[i]).point[1].X;
-                 if (flagPodrezLevTorec) then
+              if (flagPodrezLevTorec) then
                 pSurf(OutSurf[j]).point[0].X := pSurf(OutSurf[i]).point[1].X + round(razmLeftPodrez);
             end;
           end;
@@ -1739,6 +1746,19 @@ begin
 //     for I := Low to OutSurf.count -1        do
 //           if(pSurf(OutSurf[i]).PKDA=2111)  or (pSurf(OutSurf[i]).PKDA=2112) then
 // pSurf(OutSurf[i]).point[0].X := round(newSize);
+end;
+
+procedure TSketchView.MendTor(flagLeft: boolean; Index, correctParam: integer);
+var
+  i: Integer;
+begin
+
+  if (flagLeft) then
+   // Изменяем размер торца, который идет за вставленным цилиндром
+    pSurf(OutSurf[Index - 2]).point[1].Y := correctParam
+  else
+   // Изменяем размер торца, который идет до  вставленного цилиндра
+    pSurf(OutSurf[Index + 1]).point[0].Y := correctParam;
 end;
 
 end.
