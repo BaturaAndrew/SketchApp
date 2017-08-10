@@ -67,13 +67,13 @@ type
 
     // Вставка наружных конусов
     procedure Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT;
-      faceOfReference: integer);
-    // Вставка  конуса
+      faceOfReference: integer; correctTorCyl: boolean = false);
+          // Вставка  конуса
     procedure Insert_Con(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
     // Вставка  цилиндра
     procedure Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT; CorrectTor:
-      boolean = false);
+      boolean = false; addOneForTorConCylRightPos: integer = 0);
 
     // Вставка  цилиндра
     procedure Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT; correctCyl:
@@ -95,6 +95,9 @@ type
 
      // находим связанный с торцем  цилиндр
     function GetCylinder(x: integer): integer;
+
+      // Корректируем цилиндр, связанный со вставляемым торцем
+    procedure MendCyl(flagLeft: boolean; NPVA_Tor, correctParam: integer);
   private
     // Преобразование координат поверхностей с учетом смещений и масштаба
     procedure ConvertingPoint;
@@ -113,8 +116,7 @@ type
       Kod_NUSL: integer);
       // Корректируем торец, связанный со вставляемым цилиндром
     procedure MendTor(flagLeft: boolean; Index, correctParam: integer);
-    // Корректируем цилиндр, связанный со вставляемым торцем
-    procedure MendCyl(flagLeft: boolean; NPVA_Tor, correctParam: integer);
+
        // Ищем поверхность, связанную с текущей
     function Coord_Y(coord_X: integer; Id: Integer = 0): integer;
   end;
@@ -522,7 +524,7 @@ begin
 end;
 
 procedure TSketchView.Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT;
-  faceOfReference: integer);
+  faceOfReference: integer; correctTorCyl: boolean);
 var
   i, Id, i_existOutCon: integer;
   Index: integer;
@@ -576,14 +578,19 @@ begin
         pSurf(OutCon[i_existOutCon]).point[1] := P2;
       end;
 
-      for i := 0 to OutSurf.Count - 1 do
+      // корректируем связанные с конусом поверхности в случае, когда конус между цилиндром и торцем
+      if correctTorCyl then
       begin
+        for i := 0 to OutSurf.Count - 1 do
+        begin
         // изменяем размеры предыдущего  торца
-        if (pSurf(OutSurf[i]).PKDA = 2132) and (pSurf(OutSurf[i]).point[0].X = P1.X) then
-          pSurf(OutSurf[i]).point[1] := P1;
+          if (pSurf(OutSurf[i]).PKDA = 2132) and (pSurf(OutSurf[i]).point[0].X = P1.X) then
+            pSurf(OutSurf[i]).point[1] := P1;
         // изменяем размеры последующего  цилиндра
-        if (pSurf(OutSurf[i]).PKDA = 2112) and (pSurf(OutSurf[i]).point[0].Y = P2.Y) then
-          pSurf(OutSurf[i]).point[0] := P2;
+          if (pSurf(OutSurf[i]).PKDA = 2112) and (pSurf(OutSurf[i]).point[0].Y = P2.Y) then
+            pSurf(OutSurf[i]).point[0] := P2;
+        end;
+
       end;
 
     end;
@@ -610,16 +617,20 @@ begin
       pSurf(OutCon[i_existOutCon]).point[1] := P2;
     end;
 
-    for i := 0 to OutSurf.Count - 1 do
+    // корректируем связанные с конусом поверхности в случае, когда конус между цилиндром и торцем
+    if correctTorCyl then
     begin
+      for i := 0 to OutSurf.Count - 1 do
+      begin
       // изменяем размеры предыдущего  торца
-      if (pSurf(OutSurf[i]).PKDA = 2132) and (pSurf(OutSurf[i]).point[0].X = P1.X) then
-        pSurf(OutSurf[i]).point[0] := P1;
+        if (pSurf(OutSurf[i]).PKDA = 2132) and (pSurf(OutSurf[i]).point[0].X = P1.X) then
+          pSurf(OutSurf[i]).point[0] := P1;
       // изменяем размеры последующего  цилиндра
-      if (pSurf(OutSurf[i]).PKDA = 2112) and (pSurf(OutSurf[i]).point[0].Y = P2.Y) then
-        pSurf(OutSurf[i]).point[1] := P2;
-    end;
+        if (pSurf(OutSurf[i]).PKDA = 2112) and (pSurf(OutSurf[i]).point[0].Y = P2.Y) then
+          pSurf(OutSurf[i]).point[1] := P2;
+      end;
 
+    end;
   end; // закрывает else
 
 end;
@@ -748,7 +759,7 @@ begin
           if not (MainForm.ProcessTrans.GetSurfParam(L_POVB).PKDA = 2122) then
             pSurf(OutSurf[i_existOutCyl + 1]).point[0].Y := P2.Y
           else
-            pSurf(OutSurf[i_existOutCyl +2]).point[0].Y := P2.Y;
+            pSurf(OutSurf[i_existOutCyl + 2]).point[0].Y := P2.Y;
         end
         // если нет, то вставляем поверхность
         else
@@ -1000,7 +1011,7 @@ begin
 end;
 
 procedure TSketchView.Insert_Cyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT;
-  CorrectTor: boolean);
+  CorrectTor: boolean; addOneForTorConCylRightPos: integer);
 var
   i, Id, i_existOutCyl: integer;
   Index: integer;
@@ -1024,12 +1035,6 @@ begin
     end;
   end;
 
-//  // координаты цилиндра
-//  if (flagLeft) then
-//    P1.X := round(pSurf(OutSurf[Id - 1]).point[0].X)
-//  else if (not (flagLeft)) then
-//    P2.X := round(pSurf(OutSurf[Id + 1]).point[0].X);
-
   if (flagPodrezLevTorec) then
   begin
     if flagLeft then
@@ -1045,16 +1050,19 @@ begin
   Index := Id + 1;
 
   if not (existOutCyl) then
-    InsertSurf(1, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL)
+  begin
+    InsertSurf(1, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+    OutSurf.Sort(Comp);
+    // Если нужно изменять торец .
+    // если вырез уже сделан и идет подточка, то изменять торец при вставке цилиндра не нужно
+    if CorrectTor then
+      MendTor(flagLeft, Index + addOneForTorConCylRightPos, P2.Y);
+  end
   else
   begin
     pSurf(OutSurf[i_existOutCyl]).point[0] := P1;
     pSurf(OutSurf[i_existOutCyl]).point[1] := P2;
   end;
-
-  // Если нужно изменять торец
-  if CorrectTor then
-    MendTor(flagLeft, Index, P2.Y);
 
 end;
 
@@ -1345,94 +1353,63 @@ begin
             [j]).R_POVV).PKDA;
         end;
 
+      OutSurf.Sort(Comp);
       // если максимальный диаметр между торцами, тогда изменяем размеры торцев
       if (((PKDA1 = 2132) or (PKDA1 = 2131)) and ((PKDA2 = 2132) or (PKDA2 = 2131))) then
       begin
 
-        for j := 0 to OutSurf.Count - 1 do
-        begin
-          if (pSurf(OutSurf[j]).number = currTrans.L_POVB) or (pSurf(OutSurf[j]).number =
-            103) then
-          begin
-        // изменяем максимальную координату левого торца
-            if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
-              pSurf(OutSurf[j]).point[1].Y := round(newSize)
-//            else
-//              pSurf(OutSurf[j]).point[0].Y := round(newSize)
-;
-          end;
-        end;
-        for j := 0 to OutSurf.Count - 1 do
-        begin
-          if pSurf(OutSurf[j]).number = currTrans.R_POVV then
-          begin
-              // изменяем максимальную координату правого торца
-            if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
-              pSurf(OutSurf[j]).point[1].Y := round(newSize)
-//            else
-//              pSurf(OutSurf[j]).point[0].Y := round(newSize)
-;
-          end;
-        end;
+      // изменяем размеры левого и правого торцев
+        if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i - 1]).point[0].Y) then
+          pSurf(OutSurf[i - 1]).point[1].Y := round(newSize)
+        else
+          pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
+        if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y) then
+          pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
+        else
+          pSurf(OutSurf[i + 1]).point[0].Y := round(newSize);
 
       end;
        // если максимальный диаметр между торцем и конусом
-      if (PKDA1 = 2122) or (PKDA2 = 2122) then
+      if ((PKDA1 = 2122) and ((PKDA2 = 2132) or (PKDA2 = 2131))) or (((PKDA1 = 2132) or (PKDA2
+        = 2131)) and (PKDA2 = 2122)) then
       begin
-        if ((PKDA1 = 2132) or (PKDA1 = 2131)) then
+      // если в эскизе на операцию еще нет конусов
+        if OutCon.Count = 0 then
         begin
-//          for j := 0 to OutCon.Count - 1 do
-//          begin
-//            if pSurf(OutCon[j]).number = currTrans.R_POVV then
-//            begin
-//                   // изменяем максимальную координату конуса справа от максимального цилиндра
-//              if (pSurf(OutCon[j]).point[1].Y > pSurf(OutCon[j]).point[0].Y) then
-//                pSurf(OutCon[j]).point[1].Y := round(newSize)
-//              else
-//                pSurf(OutCon[j]).point[0].Y := round(newSize);
-//            end;
-//          end;
+        // изменяем размеры левого
+          if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i - 1]).point[0].Y) then
+            pSurf(OutSurf[i - 1]).point[1].Y := round(newSize)
+          else
+            pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
+          // и правого торцев
+          if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y) then
+            pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
+          else
+            pSurf(OutSurf[i + 1]).point[0].Y := round(newSize);
 
-          for j := 0 to OutSurf.Count - 1 do
-          begin
-            if (pSurf(OutSurf[j]).number = currTrans.L_POVB) or (pSurf(OutSurf[j]).number
-              = 103) then
-            begin
-        // изменяем максимальную координату левого торца
-              if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
-                pSurf(OutSurf[j]).point[1].Y := round(newSize)
-              else
-                pSurf(OutSurf[j]).point[0].Y := round(newSize);
-            end;
-          end;
         end;
 
-        if (PKDA2 = 2131) or (PKDA2 = 2131) then
+        if OutCon.Count > 0 then
         begin
-
-//          for j := 0 to OutCon.Count - 1 do
-//          begin
-//            if pSurf(OutCon[j]).number = currTrans.L_POVB then
-//            begin
-//                   // изменяем максимальную координату конуса справа от максимального цилиндра
-//              if (pSurf(OutCon[j]).point[1].Y > pSurf(OutCon[j]).point[0].Y) then
-//                pSurf(OutCon[j]).point[1].Y := round(newSize)
-//              else
-//                pSurf(OutCon[j]).point[0].Y := round(newSize);
-//            end;
-//          end;
-
-          for j := 0 to OutSurf.Count - 1 do
+                 // изменяем размер правого торца
+          if PKDA2 = 2122 then
           begin
-            if pSurf(OutSurf[j]).number = currTrans.R_POVV then
-            begin
-              // изменяем максимальную координату правого торца
-              if (pSurf(OutSurf[j]).point[1].Y > pSurf(OutSurf[j]).point[0].Y) then
-                pSurf(OutSurf[j]).point[1].Y := round(newSize)
-              else
-                pSurf(OutSurf[j]).point[0].Y := round(newSize);
-            end;
+
+            if (pSurf(OutSurf[i + 1]).point[1].Y > pSurf(OutSurf[i + 1]).point[0].Y) then
+              pSurf(OutSurf[i + 1]).point[1].Y := round(newSize)
+            else
+              pSurf(OutSurf[i + 1]).point[0].Y := round(newSize);
           end;
+
+            // изменяем размер левого торца
+          if PKDA1 = 2122 then
+          begin
+            if (pSurf(OutSurf[i - 1]).point[1].Y > pSurf(OutSurf[i - 1]).point[0].Y) then
+              pSurf(OutSurf[i - 1]).point[1].Y := round(newSize)
+            else
+              pSurf(OutSurf[i - 1]).point[0].Y := round(newSize);
+          end;
+
         end;
       end;
 
@@ -1798,11 +1775,11 @@ var
 begin
 // ситуация в случае перехода "точить цилиндр", за к-м следует обработка конуса
   if (flagLeft) then
-   // Изменяем размер торца, который идет за вставленным цилиндром
+   // Изменяем размер торца, который идет до  вставленного цилиндра
     pSurf(OutSurf[Index - 2]).point[1].Y := correctParam
   else
-   // Изменяем размер торца, который идет до  вставленного цилиндра
-    pSurf(OutSurf[Index + 2]).point[0].Y := correctParam;
+   // Изменяем размер торца, который идет за вставленным цилиндром
+    pSurf(OutSurf[Index + 1]).point[0].Y := correctParam;
 end;
 
 procedure TSketchView.MendCyl(flagLeft: boolean; NPVA_Tor, correctParam: integer);

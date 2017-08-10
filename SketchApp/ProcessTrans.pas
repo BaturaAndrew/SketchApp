@@ -246,10 +246,12 @@ begin
         MakeOutCon_Tor_and_Cyl;
         Exit;
       end;
-      if (PKDA_L = 2132) and (PKDA_R = 2111) then
+      if (PKDA_L = 2131) and (PKDA_R = 2111) then
        // нужно по-новому обработать этот вариант
-
-
+      begin
+        MakeOutCon_Tor_and_Cyl;
+        Exit;
+      end;
 
     end;
 
@@ -268,10 +270,10 @@ begin
         if ((PKDA = 2112) or (PKDA = 3212) or (PKDA = 3222)) then
           // и новый цилиндр - не закрытый
           if not (IsClosed(m_InputData.currTrans.NPVA)) then
-           begin
+          begin
             MakeOutHalfOpenCyl;
-           Exit;
-           end;
+            Exit;
+          end;
         // если в переходах первый переход - "подрезать"
         if (PKDA = 2132) then
         // полуоткрытый торец между цилиндрами
@@ -280,34 +282,34 @@ begin
           begin
           // и новый цилиндр - не закрытый
             if not (IsClosed(m_InputData.currTrans.R_POVV)) then
-              begin
+            begin
               MakeOutHalfOpenCyl;
               Exit;
-              end;
+            end;
           end
           //? Вставить условие сравнения поверхностей по PKDA, между которыми расположен торец
           // торец связан с конусом. Конус между торцами
           else if Between_the_Cone(m_InputData.currTrans.R_POVV) = 1 then
-            begin
+          begin
             MakeOutCon_Tor_and_Tor;
             Exit;
-            end
+          end
           //?
           // торец связан с конусом. Конус между цилиндром и торцем
           else if Between_the_Cone(m_InputData.currTrans.R_POVV) = 2 then
-            begin
+          begin
             MakeOutHalfOpenCyl;
             Exit;
-            end;
+          end;
       end;
 
       // или закрытый  цилиндр
       if (PKDA = 2112) then
         if (IsClosed(m_InputData.currTrans.NPVA)) then
-          begin
+        begin
           MakeOutClosedCyl;
           Exit;
-          end;
+        end;
     end;
 
     // Если делаем вырезы
@@ -315,16 +317,16 @@ begin
     if (PKDA < 0) then
       // делаем сквозное отверстие
       if (str[str.length] = '1') then
-     begin
-        MakeInOpenCyl ;
-     Exit;
-     end
+      begin
+        MakeInOpenCyl;
+        Exit;
+      end
         // делаем внутренний полуоткрытый цилиндр
       else if (str[str.length] = '2') then
-       begin
+      begin
         MakeInHalfOpenCyl;
         Exit;
-       end;
+      end;
 
   end;
 end;
@@ -558,11 +560,12 @@ begin
   faceOfReference := round(GetSurfParam(m_InputData.currTrans.R_POVV).PRIV);
 
   MainForm.m_sketchView.Insert_OutCon(m_InputData.currTrans, flagLeft, P1, P2,
-    faceOfReference);
+    faceOfReference, true );
 
   FillList(m_InputData.currTrans);
 end;
 
+// деталь 1084 и второй конус в 1083
 procedure TProcessingTransition.MakeOutCon_Tor_and_Tor;
 var
   i: integer;
@@ -573,6 +576,9 @@ var
   P1, P2: TPOINT;
   faceOfReference: integer;
   d_con: single;
+
+  // индекс торца, которые нужно исправить
+  Index: Integer;
 begin
 
 // Вставляем торец
@@ -672,10 +678,32 @@ begin
 
     // Если первая координата цилидра при вырезе справа равна длине детали, то цилиндр не вставляем
     if not (P2.X = P1.X + MainForm.m_sketchView.razmLeftPodrez) then
-      MainForm.m_sketchView.Insert_Cyl(nomerPov, flagLeft, P1, P2, true);
+      MainForm.m_sketchView.Insert_Cyl(nomerPov, flagLeft, P1, P2, true, 1)
+    else
+    begin
+      //находим торец, который корректируем, в массиве поверхностей
+      for i := 0 to MainForm.m_sketchView.OutSurf.Count - 1 do
+      begin
+        if ((pSurf(MainForm.m_sketchView.OutSurf[i]).PKDA = 2132) or (pSurf(MainForm.m_sketchView.OutSurf
+          [i]).PKDA = 2131)) then
+          if ((pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].X = P2.X)) then
+          begin
+            pSurf(MainForm.m_sketchView.OutSurf[i]).point[0].Y := P1.Y;
+            break;
+          end;
+      end;
+
+    end;
+    // или другая интерпретация условия:
+    // Если в последующих переходах при обработке справа есть обработка  следующего за конусом торца,
+    // то делаем цилиндр
+
+    // Если не вставили цилиндр, то нужно изменить конус.
+    //...
   end;
 end;
 
+// деталь 1083 и подточка в 1084
 procedure TProcessingTransition.MakeOutCon_Tor_and_Tor1;
 var
   i: integer;
@@ -760,7 +788,8 @@ begin
         end;
 
     end;
-    MainForm.m_sketchView.Insert_Cyl(nomerPov, flagLeft, P1, P2);
+
+    MainForm.m_sketchView.Insert_Cyl(nomerPov, flagLeft, P1, P2, true);
   end;
 
   // Вставляем торец
@@ -1011,48 +1040,6 @@ begin
   end;
 
 end;
-
-//// Вставка внешнего торца
-//procedure TProcessingTransition.MakeOutTor;
-//var
-//  i: integer;
-//  // если true, то вырез слева, иначе - справа
-//  flagLeft: boolean;
-//  tochitPover, podrezTorec: single;
-//  nomerPovTorec: integer;
-//  nomerPriv: integer;
-//  NPVA, PKDA, POVB, POVV: integer;
-//  P1, P2: TPOINT;
-//  faceOfReference: integer;
-//begin
-// // определение положение выемок
-//  flagLeft := PositionCut;
-//
-// // от какого торца отсчитываем подрезку
-//  faceOfReference := round(GetSurfParam(m_InputData.currTrans.NPVA).PRIV);
-//
-//  podrezTorec := m_InputData.currTrans.SizesFromTP[2];
-//  // берем величину подрезки из перехода "точить конус"
-//  for i := 0 to m_InputData.countTransitions - 1 do
-//  begin
-//    if ptrTrans(m_InputData.listTrans[i]).NPVA = m_InputData.currTrans.R_POVV then
-//    begin
-//      tochitPover := ptrTrans(m_InputData.listTrans[i]).SizesFromTP[0];
-//      Break;
-//    end;
-//  end;
-//
-//      // номер поверхности нового торца
-//  if not (flagLeft) then
-//    nomerPovTorec := NPVA - 1
-//  else
-//    nomerPovTorec := NPVA + 1;
-//
-//  MainForm.m_sketchView.Insert_OutHalfopenSurf(m_InputData.currTrans, flagLeft,
-//    nomerPovTorec, podrezTorec, tochitPover, faceOfReference);
-//
-//  FillList(m_InputData.currTrans);
-//end;
 
 // Вставка внутреннего полуоткрытого выреза
 procedure TProcessingTransition.MakeInHalfOpenCyl;
