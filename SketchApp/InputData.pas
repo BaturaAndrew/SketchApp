@@ -8,7 +8,7 @@ type
   paramSurfArray = array [0 .. 5] of integer;
 
   // указатель на запись
-  ptrTrans = ^RTransition;
+  pTrans = ^RTransition;
 
   // record - для хранения информации о переходе
   RTransition = record
@@ -66,11 +66,11 @@ type
     countTransitions: integer;
 
     // объект, хранящий информацию о текущем переходе.
-    currTrans: ptrTrans;
+    currTrans: pTrans;
     // объект, хранящий информацию о переходе, связанном с текущим
-    joinTrans: ptrTrans;
+    joinTrans: pTrans;
     // второй переход, связанный с текущим (для закрытых цилиндров)
-    joinTrans2: ptrTrans;
+    joinTrans2: pTrans;
 
     // list для хранения информации о поверхностях
     listSurface: TList;
@@ -88,7 +88,7 @@ type
     // Чтение  данных о переходах соответствующей детали из базы SQL
     procedure ReadSQLDataTransitions(detal: integer);
     // Чтение информации о текущем переходе
-    procedure ReadCurrentTransition(var currentTransition: ptrTrans;
+    procedure ReadCurrentTransition(var currentTransition: pTrans;
       i_trans: integer);
     // очищаем переходы предыдущей детали
     procedure ClearPrevTransitions;
@@ -170,22 +170,22 @@ begin
   Result := mass;
 end;
 
-procedure TInputData.ReadCurrentTransition(var currentTransition: ptrTrans;
+procedure TInputData.ReadCurrentTransition(var currentTransition: pTrans;
   i_trans: integer);
 var
   i: integer;
 begin
 
-  currentTransition.NPVA := ptrTrans(listTrans[i_trans]).NPVA;
-  currentTransition.L_POVB := ptrTrans(listTrans[i_trans]).L_POVB;
-  currentTransition.R_POVV := ptrTrans(listTrans[i_trans]).R_POVV;
-  currentTransition.PKDA := ptrTrans(listTrans[i_trans]).PKDA;
-  currentTransition.NUSL := ptrTrans(listTrans[i_trans]).NUSL;
-  currentTransition.PRIV := ptrTrans(listTrans[i_trans]).PRIV;
-  currentTransition.PerexUserText := ptrTrans(listTrans[i_trans]).PerexUserText;
+  currentTransition.NPVA := pTrans(listTrans[i_trans]).NPVA;
+  currentTransition.L_POVB := pTrans(listTrans[i_trans]).L_POVB;
+  currentTransition.R_POVV := pTrans(listTrans[i_trans]).R_POVV;
+  currentTransition.PKDA := pTrans(listTrans[i_trans]).PKDA;
+  currentTransition.NUSL := pTrans(listTrans[i_trans]).NUSL;
+  currentTransition.PRIV := pTrans(listTrans[i_trans]).PRIV;
+  currentTransition.PerexUserText := pTrans(listTrans[i_trans]).PerexUserText;
 
   for i := 0 to 2 do
-    currentTransition.SizesFromTP[i] := ptrTrans(listTrans[i_trans])
+    currentTransition.SizesFromTP[i] := pTrans(listTrans[i_trans])
       .SizesFromTP[i];
 
 end;
@@ -202,7 +202,7 @@ end;
 
 procedure TInputData.ReadSQLDataTransitions(detal: integer);
 var
-  transition: ptrTrans;
+  transition: pTrans;
   surfase: pSurf;
   i: integer;
   tempDataSet: TCustomADODataSet;

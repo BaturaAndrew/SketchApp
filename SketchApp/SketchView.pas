@@ -56,19 +56,19 @@ type
     procedure Clear;
 
     // Вставка закрытого цилиндра
-    procedure Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean; numPrivLeft,
+    procedure Insert_OutClosedSurf(currTrans: pTrans; flagLeft: boolean; numPrivLeft,
       numPrivRight: integer; leftTor, diamClosedCyl, lengthClosedCylindr, rightTorec,
       diamHalfopenedCyl, lengthHalfopenedCyl: single);
 
     // Вставка наружных полуоткрытых поверхностей (выемок)
-    procedure Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov:
+    procedure Insert_OutHalfopenSurf(currTrans: pTrans; flagLeft: boolean; nomerPov:
       integer = 0; podrezTorec: single = 0; tochitPover: single = 0; faceOfReference:
       integer = 1);
 
     // Вставка наружных конусов
-    procedure Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT;
+    procedure Insert_OutCon(currTrans: pTrans; flagLeft: boolean; P1, P2: TPOINT;
       faceOfReference: integer; correctTorCyl: boolean = false);
-          // Вставка  конуса
+    // Вставка  конуса
     procedure Insert_Con(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
     // Вставка  цилиндра
@@ -76,22 +76,27 @@ type
       boolean = false; addOneForTorConCylRightPos: integer = 0);
 
     // Вставка  цилиндра
-    procedure Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT; correctCyl:
+    procedure Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT; CorrectCyl:
       boolean = false);
 
     // Вставка внутреннего открытого цилиндра (вырез)
-    procedure Insert_InOpenCyl(currentTransition: ptrTrans; nomerPovTorec: integer;
-      diametr: single);
+    procedure Insert_InOpenCyl(currentTransition: pTrans; nomerPovTorec: integer; diametr:
+      single);
 
     // Вставка внутренних полуоткрытых поверхностей (вырезов)
-    procedure Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean; nomerPov:
+    procedure Insert_InHalfopenSurf(currTrans: pTrans; flagLeft: boolean; nomerPov:
       integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
 
+    // Вставка внутреннего торца
+    procedure Insert_InTor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+    // Вставка внутреннего цилиндра
+    procedure Insert_InCyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+
     // изменение размера левого или правого торца
-    procedure Resize_Torec(currTrans: ptrTrans);
+    procedure Resize_Torec(currTrans: pTrans);
 
     // изменение размера цилиндра
-    procedure Resize_Cylinder(currTrans: ptrTrans);
+    procedure Resize_Cylinder(currTrans: pTrans);
 
      // находим связанный с торцем  цилиндр
     function GetCylinder(x: integer): integer;
@@ -261,7 +266,7 @@ begin
   razmLeftPodrez := 0;
 end;
 
-procedure TSketchView.Insert_OutClosedSurf(currTrans: ptrTrans; flagLeft: boolean;
+procedure TSketchView.Insert_OutClosedSurf(currTrans: pTrans; flagLeft: boolean;
   numPrivLeft, numPrivRight: integer; leftTor, diamClosedCyl, lengthClosedCylindr,
   rightTorec, diamHalfopenedCyl, lengthHalfopenedCyl: single);
 var
@@ -523,7 +528,7 @@ begin
 
 end;
 
-procedure TSketchView.Insert_OutCon(currTrans: ptrTrans; flagLeft: boolean; P1, P2: TPOINT;
+procedure TSketchView.Insert_OutCon(currTrans: pTrans; flagLeft: boolean; P1, P2: TPOINT;
   faceOfReference: integer; correctTorCyl: boolean);
 var
   i, Id, i_existOutCon: integer;
@@ -635,7 +640,7 @@ begin
 
 end;
 
-procedure TSketchView.Insert_OutHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean;
+procedure TSketchView.Insert_OutHalfopenSurf(currTrans: pTrans; flagLeft: boolean;
   nomerPov: integer; podrezTorec, tochitPover: single; faceOfReference: integer);
 var
   Id, i, i_existOutHalfopenCylinder, i_existOutCyl: integer;
@@ -866,7 +871,7 @@ begin
 end;
 
 procedure TSketchView.Insert_Tor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT;
-  correctCyl: boolean);
+  CorrectCyl: boolean);
 var
   i, Id, i_existOutTor: integer;
   Index: integer;
@@ -912,7 +917,7 @@ begin
   end;
 
   // корректируем связанный с торцем цилиндр
-  if correctCyl then
+  if CorrectCyl then
     MendCyl(flagLeft, nomerPov, P2.X);
 
 end;
@@ -1066,8 +1071,8 @@ begin
 
 end;
 
-procedure TSketchView.Insert_InHalfopenSurf(currTrans: ptrTrans; flagLeft: boolean;
-  nomerPov: integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
+procedure TSketchView.Insert_InHalfopenSurf(currTrans: pTrans; flagLeft: boolean; nomerPov:
+  integer = 0; podrezTorec: single = 0; tochitPover: single = 0);
 var
   i, j, j_tor, i_lTor, i_rTor: integer;
   surface, surface1: pSurf;
@@ -1093,7 +1098,7 @@ begin
   end;
 
   // Чтобы округляло до большего целого числа если после запятой 5. Т.к. в функции Round
-  // Округление использует банковские правила, где точная половина значения вызывает округление к четному числу
+  // Округление использует правила, где точная половина значения вызывает округление к четному числу
   if (Frac(podrezTorec) = 0.5) then
     podrezTorec := podrezTorec + 0.1;
   if (Frac(tochitPover) = 0.5) then
@@ -1246,7 +1251,7 @@ begin
   end;
 end;
 
-procedure TSketchView.Insert_InOpenCyl(currentTransition: ptrTrans; nomerPovTorec: integer;
+procedure TSketchView.Insert_InOpenCyl(currentTransition: pTrans; nomerPovTorec: integer;
   diametr: single);
 var
   i: integer;
@@ -1326,7 +1331,7 @@ begin
 
 end;
 
-procedure TSketchView.Resize_Cylinder(currTrans: ptrTrans);
+procedure TSketchView.Resize_Cylinder(currTrans: pTrans);
 var
   i, j: integer;
   newSize: single;
@@ -1417,7 +1422,7 @@ begin
   end;
 end;
 
-procedure TSketchView.Resize_Torec(currTrans: ptrTrans);
+procedure TSketchView.Resize_Torec(currTrans: pTrans);
 var
   i, j: integer;
   maxsLenth: single;
@@ -1847,6 +1852,102 @@ begin
 
   // Если нет в эскизе конусов, удовлетворяющих условию
   result := round(pSurf(OutSurf[Id]).point[0].Y);
+
+end;
+
+procedure TSketchView.Insert_InTor(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+var
+  i, j, j_tor, i_lTor, i_rTor: integer;
+  surface, surface1: pSurf;
+  Id: integer;
+  Index: integer;
+  Kod_PKDA, Kod_NUSL: integer;
+  existInnerTor: boolean;
+  i_existInnerTor: integer;
+begin
+
+  existInnerTor := false;
+  // проверяем, есть ли уже внутренний торец
+  // (если номер обрабатываемой пов-ти уже существует во внутренних пов-тях эскиза)
+  for i := 0 to InnerSurf.Count - 1 do
+  begin
+    if (pSurf(InnerSurf[i]).number = nomerPov) then
+    begin
+      existInnerTor := true;
+      i_existInnerTor := i;
+      break;
+    end;
+  end;
+
+  Kod_PKDA := -2132;
+
+  if flagLeft then
+    Kod_NUSL := 9913
+  else
+    Kod_NUSL := 9915;
+
+  if (flagPodrezLevTorec) then
+  begin
+    P1.X := P1.X + round(razmLeftPodrez);
+    P2.X := P2.X + round(razmLeftPodrez);
+
+  end;
+
+  Index := Id + 1;
+  if (existInnerTor) then
+  begin
+    pSurf(InnerSurf[i_existInnerTor]).point[0] := P1;
+    pSurf(InnerSurf[i_existInnerTor]).point[1] := P2;
+  end
+  else
+    InsertSurf(2, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+
+end;
+
+procedure TSketchView.Insert_InCyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+var
+  i, j, j_tor, i_lTor, i_rTor: integer;
+  surface, surface1: pSurf;
+  Id: integer;
+  Index: integer;
+  Kod_PKDA, Kod_NUSL: integer;
+  existInnerCyl: boolean;
+  i_existInnerCyl: integer;
+begin
+
+  existInnerCyl := false;
+  // проверяем, есть ли уже внутренний цилиндр
+  for i := 0 to InnerSurf.Count - 1 do
+  begin
+    if (pSurf(InnerSurf[i]).number = nomerPov) then
+    begin
+      existInnerCyl := true;
+      i_existInnerCyl := i;
+      break;
+    end;
+  end;
+
+  Kod_PKDA := -2112;
+
+  if flagLeft then
+    Kod_NUSL := 9913
+  else
+    Kod_NUSL := 9915;
+
+  if (flagPodrezLevTorec) then
+  begin
+    P1.X := P1.X + round(razmLeftPodrez);
+    P2.X := P2.X + round(razmLeftPodrez);
+  end;
+
+  Index := Id + 1;
+  if (existInnerCyl) then
+  begin
+    pSurf(InnerSurf[i_existInnerCyl]).point[0] := P1;
+    pSurf(InnerSurf[i_existInnerCyl]).point[1] := P2;
+  end
+  else
+    InsertSurf(2, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
 
 end;
 
