@@ -92,6 +92,9 @@ type
     // ¬ставка внутреннего цилиндра
     procedure Insert_InCyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
 
+     // ¬ставка внутреннего конуса
+    procedure Insert_InCon(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+
     // изменение размера левого или правого торца
     procedure Resize_Torec(currTrans: pTrans);
 
@@ -248,6 +251,7 @@ begin
   m_Zoom := 1.4;
   m_dx := 0;
   m_dy := 0;
+  razmLeftPodrez := 0;
   OutSurf := TList.Create;
   InnerSurf := TList.Create;
   OutCon := TList.Create;
@@ -1294,7 +1298,6 @@ begin
     Kod_NUSL := 9910;
     Index := 0;
     InsertSurf(2, P1, P2, Index, nomerPovTorec, Kod_PKDA, Kod_NUSL);
-
   end;
 end;
 
@@ -1885,13 +1888,13 @@ begin
     Kod_NUSL := 9913
   else
     Kod_NUSL := 9915;
-
-  if (flagPodrezLevTorec) then
-  begin
-    P1.X := P1.X + round(razmLeftPodrez);
-    P2.X := P2.X + round(razmLeftPodrez);
-
-  end;
+//
+//  if (flagPodrezLevTorec) then
+//  begin
+//    P1.X := P1.X + round(razmLeftPodrez);
+//    P2.X := P2.X + round(razmLeftPodrez);
+//
+//  end;
 
   Index := Id + 1;
   if (existInnerTor) then
@@ -1902,6 +1905,50 @@ begin
   else
     InsertSurf(2, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
 
+  if flagLeft then
+  begin
+  // подправл€ем размеры цилиндров
+    for j := 0 to InnerSurf.Count - 1 do
+    begin
+      if (pSurf(InnerSurf[j]).PKDA = -2112) or (pSurf(InnerSurf[j]).PKDA = -2111) then
+      begin
+        if ((pSurf(InnerSurf[j]).point[0].x < P2.X) and (pSurf(InnerSurf[j]).point[1].x >
+          P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+        begin
+          pSurf(InnerSurf[j]).point[0].x := P2.X;
+          break;
+        end;
+        if ((pSurf(InnerSurf[j]).point[1].x < P2.X) and (pSurf(InnerSurf[j]).point[0].x >
+          P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+        begin
+          pSurf(InnerSurf[j]).point[1].x := P2.X;
+          break;
+        end;
+      end;
+    end; // закрыли for
+  end
+  else
+  begin
+  // подправл€ем размеры цилиндров
+    for j := 0 to InnerSurf.Count - 1 do
+    begin
+      if (pSurf(InnerSurf[j]).PKDA = -2112) or (pSurf(InnerSurf[j]).PKDA = -2111) then
+      begin
+        if ((pSurf(InnerSurf[j]).point[0].x > P2.X) and (pSurf(InnerSurf[j]).point[1].x <
+          P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+        begin
+          pSurf(InnerSurf[j]).point[0].x := P2.X;
+          break;
+        end;
+        if ((pSurf(InnerSurf[j]).point[1].x > P2.X) and (pSurf(InnerSurf[j]).point[0].x <
+          P2.X) and (pSurf(InnerSurf[j]).number <> nomerPov)) then
+        begin
+          pSurf(InnerSurf[j]).point[1].x := P2.X;
+          break;
+        end;
+      end;
+    end; // закрыли for
+  end;
 end;
 
 procedure TSketchView.Insert_InCyl(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
@@ -1930,14 +1977,16 @@ begin
   Kod_PKDA := -2112;
 
   if flagLeft then
-    Kod_NUSL := 9913
-  else
-    Kod_NUSL := 9915;
-
-  if (flagPodrezLevTorec) then
   begin
-    P1.X := P1.X + round(razmLeftPodrez);
-    P2.X := P2.X + round(razmLeftPodrez);
+//    if (flagPodrezLevTorec) then
+//      P2.X := P2.X + round(razmLeftPodrez);
+    Kod_NUSL := 9912;
+  end
+  else
+  begin
+//    if (flagPodrezLevTorec) then
+//      P1.X := P1.X + round(razmLeftPodrez);
+    Kod_NUSL := 9916;
   end;
 
   Index := Id + 1;
@@ -1948,6 +1997,46 @@ begin
   end
   else
     InsertSurf(2, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
+
+end;
+
+procedure TSketchView.Insert_InCon(nomerPov: integer; flagLeft: boolean; P1, P2: TPOINT);
+var
+  i: integer;
+  Id: integer;
+  Index: integer;
+  Kod_PKDA, Kod_NUSL: integer;
+  existInnerCon: boolean;
+  i_existInnerCon: integer;
+begin
+
+  existInnerCon := false;
+  // провер€ем, есть ли уже внутренний цилиндр
+  for i := 0 to InnerSurf.Count - 1 do
+  begin
+    if (pSurf(InnerSurf[i]).number = nomerPov) then
+    begin
+      existInnerCon := true;
+      i_existInnerCon := i;
+      break;
+    end;
+  end;
+
+  Kod_PKDA := -2122;
+
+  if flagLeft then
+    Kod_NUSL := 9912
+  else
+    Kod_NUSL := 9916;
+
+  Index := Id + 1;
+  if (existInnerCon) then
+  begin
+    pSurf(InnerSurf[i_existInnerCon]).point[0] := P1;
+    pSurf(InnerSurf[i_existInnerCon]).point[1] := P2;
+  end
+  else
+    InsertSurf(3, P1, P2, Index, nomerPov, Kod_PKDA, Kod_NUSL);
 
 end;
 

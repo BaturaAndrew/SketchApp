@@ -11,7 +11,7 @@ uses
 
 {$R *.res}
 
-begin
+  begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TDataModule1, DataModule1);

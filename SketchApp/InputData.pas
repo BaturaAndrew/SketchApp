@@ -52,7 +52,7 @@ type
     // Номер поверхности привязки
     PRIV: integer;
     // Par1, Par2, Par3 , Par4, Par5
-    Sizes: array [0 .. 5] of single;
+    Sizes: array [0 .. 4] of single;
   end;
 
   // класс отвечает за чтение данных из базы и за их хранение
@@ -63,14 +63,14 @@ type
     maxDiamDetal, lengthDetal: single;
   public
     // количество переходов
-    countTransitions: integer;
+    countTrans: integer;
 
     // объект, хранящий информацию о текущем переходе.
     currTrans: pTrans;
     // объект, хранящий информацию о переходе, связанном с текущим
-    joinTrans: pTrans;
+    linkedTrans: pTrans;
     // второй переход, связанный с текущим (для закрытых цилиндров)
-    joinTrans2: pTrans;
+    linkedTrans2: pTrans;
 
     // list для хранения информации о поверхностях
     listSurface: TList;
@@ -108,15 +108,15 @@ uses
 // Конструктор   TInfModel
 constructor TInputData.Create;
 begin
-  countTransitions := 0;
+  countTrans := 0;
   listTrans := TList.Create;
   listSurface := TList.Create;
   currTrans := nil;
   new(currTrans);
-  joinTrans := nil;
-  new(joinTrans);
-  joinTrans2 := nil;
-  new(joinTrans2);
+  linkedTrans := nil;
+  new(linkedTrans);
+  linkedTrans2 := nil;
+  new(linkedTrans2);
 
 end;
 
@@ -194,10 +194,10 @@ procedure TInputData.ClearPrevTransitions;
 begin
   currTrans := nil;
   new(currTrans);
-  joinTrans := nil;
-  new(joinTrans);
-  joinTrans2 := nil;
-  new(joinTrans2);
+  linkedTrans := nil;
+  new(linkedTrans);
+  linkedTrans2 := nil;
+  new(linkedTrans2);
 end;
 
 procedure TInputData.ReadSQLDataTransitions(detal: integer);
@@ -240,7 +240,7 @@ begin
   while not tempDataSet.Eof do
   begin
 
-    countTransitions := countTransitions + 1;
+    countTrans := countTrans + 1;
 
     // Сохранение информащии о переходе в listTrans
     transition := nil;

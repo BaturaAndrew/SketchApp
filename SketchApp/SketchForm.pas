@@ -126,7 +126,7 @@ begin
 
   i := 0;
   // Проходим каждый переход
-  for i := 0 to ProcessTrans.m_InputData.countTransitions - 1 do
+  for i := 0 to ProcessTrans.m_InputData.countTrans - 1 do
   begin
     if (MessageDlg('Следующий переход?', mtConfirmation, mbYesNo, 1) <> mrNo)
     then
@@ -137,7 +137,7 @@ begin
     else
       break;
     // Отрисовываем эскиз перехода
-    if (i > (ProcessTrans.m_InputData.countTransitions - 1)) then
+    if (i > (ProcessTrans.m_InputData.countTrans - 1)) then
       flagRedraw := false
     else
     begin
