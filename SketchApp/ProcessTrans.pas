@@ -145,7 +145,6 @@ begin
     if (pSurf(m_InputData.listSurface[i]).NUSL = 9907) and (pSurf(m_InputData.listSurface[i]).number
       = NPVA) then
     begin
-
       // находим размер привязки
       for j := 0 to MainForm.m_sketchView.OutSurf.Count - 1 do
       begin
@@ -173,7 +172,7 @@ begin
     else
       size := size - GetSurfParam(NPVA).Sizes[0];
   end;
-  result := size;
+  result := size;;
 end;
 
 constructor TProcessingTransition.Create;
