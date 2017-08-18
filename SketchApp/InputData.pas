@@ -31,6 +31,14 @@ type
 
     // Текст перехода
     PerexUserText: string;
+
+
+    // ID_Nomer_oper
+    Id_Oper: Integer;
+    // Kod_vid_perexod_TP03
+    TP03: Integer;
+    //Kod_vid_group_perex_ust_TP04
+    TP04: Integer;
   end;
 
   pSurf = ^RSurface;
@@ -188,6 +196,11 @@ begin
     currentTransition.SizesFromTP[i] := pTrans(listTrans[i_trans])
       .SizesFromTP[i];
 
+
+  currentTransition.TP03 := pTrans(listTrans[i_trans]).TP03;
+  currentTransition.TP04 := pTrans(listTrans[i_trans]).TP04;
+   currentTransition.Id_Oper := pTrans(listTrans[i_trans]).Id_Oper;
+
 end;
 
 procedure TInputData.ClearPrevTransitions;
@@ -253,6 +266,11 @@ begin
     transition.SizesFromTP[1] := tempDataSet.Fields[2].AsSingle;
     transition.SizesFromTP[2] := tempDataSet.Fields[3].AsSingle;
     transition.PerexUserText := tempDataSet.Fields[4].AsString;
+     transition.Id_Oper := tempDataSet.Fields[5].AsInteger;
+    transition.TP03 := tempDataSet.Fields[6].AsInteger;
+    transition.TP04 := tempDataSet.Fields[7].AsInteger;
+
+
     // атрибуты поверхности
     paramsSurf := GetSurfParam(detal, transition.NPVA);
     transition.L_POVB := paramsSurf[0];

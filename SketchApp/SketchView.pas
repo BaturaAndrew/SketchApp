@@ -31,7 +31,7 @@ type
     // Массив внутренних поверхностей
     InnerSurf: TList;
   protected
-    // Увеличение(тоже в некотором роде маштаб)
+    // Увеличение(тоже в некотором роде масштаб)
     m_Zoom: real;
 
     // Массив наружных  поверхностей с промасштабированными координатами
@@ -100,9 +100,6 @@ type
 
     // изменение размера цилиндра
     procedure Resize_Cylinder(currTrans: pTrans);
-
-     // находим связанный с торцем  цилиндр
-    function GetCylinder(x: integer): integer;
 
       // Корректируем цилиндр, связанный со вставляемым торцем
     procedure MendCyl(flagLeft: boolean; NPVA_Tor, correctParam: integer);
@@ -1767,15 +1764,7 @@ begin
     Result := numberSurf;
 end;
 
-  // находим связанный с торцем  цилиндр
-function TSketchView.GetCylinder(x: integer): integer;
-var
-  i: Integer;
-begin
-//     for I := Low to OutSurf.count -1        do
-//           if(pSurf(OutSurf[i]).PKDA=2111)  or (pSurf(OutSurf[i]).PKDA=2112) then
-// pSurf(OutSurf[i]).point[0].X := round(newSize);
-end;
+
 
 procedure TSketchView.MendTor(flagLeft: boolean; Index, correctParam: integer);
 var
@@ -1795,13 +1784,6 @@ var
   i: Integer;
   x_tor: integer;
 begin
-// ситуация в случае перехода "точить цилиндр", за к-м следует обработка конуса
-//  if (flagLeft) then
-//   // Изменяем размер торца, который идет за вставленным цилиндром
-//    pSurf(OutSurf[Index - 2]).point[1].Y := correctParam
-//  else
-   // Изменяем размер торца, который идет до  вставленного цилиндра
- // pSurf(OutSurf[Index - 1]).point[1].x := correctParam;
 
   for i := 0 to OutSurf.Count - 1 do
   begin
